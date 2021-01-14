@@ -15,31 +15,27 @@ class Beacon:
 
         # Frame Control Field> 0x8000
         self.version = 0
-        self.frame_type = 0  # Managemnet frame 00
-        self.frame_subtype = 8  # Beacon 1000
-        self.flags = 0 # hardcoded
+        self.frame_type = 0         # Managemnet frame 00
+        self.frame_subtype = 8      # Beacon 1000
+        self.flags = 0              # hardcoded
 
         # Address fields
-
-        self.dest_addr = 'ff:ff:ff:ff:ff:ff'  # address 1
-        self.src_addr = source_address  # address 2
-        self.bssid = self.src_addr               # address 3
-        self.fragment_number = 0 # hardcoded
-        self.seq_number = 0 # hardcoded
+        self.dest_addr = 'ff:ff:ff:ff:ff:ff'    # address 1
+        self.src_addr = source_address          # address 2
+        self.bssid = self.src_addr              # address 3
+        self.fragment_number = 0                # hardcoded
+        self.seq_number = 0                     # hardcoded
 
         # Frame Body -- 802.11 Management Beacon
-
-        self.b_timestamp = 1608204089 # hardcoded
-        self.b_interval = 102 # hardcoded
-        self.cap_flags = 0x0431  # Capability flags... hardcoded
+        self.b_timestamp = 1608204089   # hardcoded
+        self.b_interval = 102           # hardcoded
+        self.cap_flags = 0x0431         # Capability flags... hardcoded
 
         self.ssid = ssid
-
-        #self.beacon_base_packet = self.beacon_base()
     
 
     '''
-    It return the scapy packet corresponding to the main fields of a Beacon packet
+    It returns the scapy packet corresponding to the main fields of a Beacon packet
     Returns a Dot11 scapy object type Beacon
     '''
     def get_beacon(self):
@@ -66,21 +62,16 @@ class Beacon:
     '''
     Changes the source address and the BSSID of the Beacon packet
     '''
-    def set_addr2(self, new_address):
-        self.beacon_base_packet.addr2 = new_address
-        self.beacon_base_packet.addr3 = new_address
+    def set_addr2(self, beacon_base_packet, new_address):
+        beacon_base_packet.addr2 = new_address
+        beacon_base_packet.addr3 = new_address
     
-    '''
-    Returns the paclet object
-    '''
-    def get_beacon(self):
-        return self.beacon_base_packet
-    
+
     '''
     Changes the SSID of the Beacon packet
     '''
-    def set_ssid(self, ssid_value):
+    def set_ssid(self, beacon_base_packet, ssid_value):
         self.ssid = ssid_value
-        self.beacon_base_packet.ssid = ssid_value
+        beacon_base_packet.ssid = ssid_value
 
     
