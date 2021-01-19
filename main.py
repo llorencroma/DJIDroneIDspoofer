@@ -341,7 +341,8 @@ else:
         if args.area:
             point = args.area.split()
             print(point)
-        random_spoof(n_random, point)
+            random_spoof(n_random, point)
+        random_spoof(n_random)
         
     else: 
         one_drone()
