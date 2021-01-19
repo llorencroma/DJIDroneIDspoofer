@@ -16,9 +16,13 @@ class DroneID:
     def __init__(self,*args, **kwargs):
         print('args: ', args, ' kwargs: ', kwargs)
         
-        if len(args) >= 1 : # Args 0 = Number of spoofed drones / Args 1 = Limited area?
+
+        # More than one argument means spoofin randomly
+        if len(args) >= 1 : 
+            # Args 0 = Number of spoofed drones / Args 1 = Spoofing point [long, lat]
             self.random_drone(int(args[0]), args[1])
         
+        # Only one argument means we spoof a single drone
         else: # user input
             
             self.ssid = kwargs['ssid'] if len(kwargs["ssid"]) > 0 else 'MAVIC-AIR-FAKE11'
@@ -111,7 +115,7 @@ class DroneID:
         attribute2byte(self.sernum),
         self.longitude,
         self.latitude,
-        self.altitude,
+        attribute2byte(self.altitude),
         self.height,
         self.v_north,
         self.v_east,
@@ -185,8 +189,9 @@ def random_location(point= None):
         # https://en.wikipedia.org/wiki/Decimal_degrees
         # The random locations will be in a 11km radio with point as a center
         
-        lon_new = point[0] + randomN(0, 9) / 10
-        lat_new = point[1] + randomN(0, 9) / 10
+
+        lon_new = float(point[0]) + randomN(0, 9) / 10
+        lat_new = float(point[1]) + randomN(0, 9) / 10
         return lon_new, lat_new
 
 '''
@@ -271,10 +276,7 @@ def one_drone():
 
 
 
-def random_spoof(n, limit=False):
-    point = None
-    if limit is True:
-        point = random_location()
+def random_spoof(n, point=None):
     
     n_drones = n
     # ToDo Check if I need to copy the packet, or otherwise it reuses the same
@@ -317,7 +319,10 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("-i", "--interface")
 parser.add_argument("-r", "--random", help="Spoof randomly N drones")
-parser.add_argument("-a", "--area", help="Spoof in a limited area", action='store_true')
+#parser.add_argument("-a", "--area", help="Spoof in a limited area", action='store_true')
+
+parser.add_argument("-a", "--area", help="Define point where drones will be spoofed eg: '46.7 7.66.'")
+
 
 
 args = parser.parse_args()
@@ -325,7 +330,7 @@ print(args)
 if not args.interface:
     raise SystemExit(f"Usage: {sys.argv[0]} -i  <interface> [-r] <number of drones> [-a] <'longitude latitude'>\n \
 -r N    Spoof N random drones. 2 by default\n \
--a      If set, drones are spoofed around a random point in a radio of 11km.")
+-a location    If set, drones are spoofed around a random point in a radio of 11km.")
 
 else:
     interface = args.interface
@@ -333,7 +338,10 @@ else:
     if args.random : # Consider fail when you pass 0 drones... ToDo
         n_random = args.random
         print("Spoofing {} drones randomly".format(n_random))
-        random_spoof(n_random,args.area)
+        if args.area:
+            point = args.area.split()
+            print(point)
+        random_spoof(n_random, point)
         
     else: 
         one_drone()
