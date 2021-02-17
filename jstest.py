@@ -52,7 +52,8 @@ class JSTest(object):
         self.old_btn_state = {}
         self.abs_state = {}
         self.last_event = {}
-        self.motion = ""
+        self.axis = ""
+        self.axis_value = 0
         self.old_abs_state = {}
         self.abbrevs = dict(abbrevs)
         for key, value in self.abbrevs.items():
@@ -118,9 +119,8 @@ class JSTest(object):
             self.old_abs_state[abbv] = self.abs_state[abbv]
             self.abs_state[abbv] = event.state
 
-            axis = event.code.split("_")[1] # X or Y
-            direction = event.state / abs(event.state)    # -1 or 1
-            self.motion =  "{}{}".format(direction, axis)
+            self.axis = event.code.split("_")[1] # X or Y
+            self.axis_value = -1 if float(event.state) < 0 else 1 # -1 or 1
         
         self.output_state(event.ev_type, abbv)
 

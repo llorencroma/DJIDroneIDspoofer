@@ -7,11 +7,11 @@ import random
 class Beacon:
     def __init__(self, source_address, ssid ):
 
-        # By default ...
-        if len(source_address) == 0:
+
+        """ if len(source_address) == 0:
             source_address = "60:60:1f:%02x:%02x:%02x" % (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
         if len(ssid) == 0:
-            ssid = "MAVIC_AIR_123456"
+            ssid = "MAVIC_AIR_REAL" """
 
         # Frame Control Field> 0x8000
         self.version = 0
