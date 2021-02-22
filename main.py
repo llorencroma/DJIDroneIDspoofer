@@ -53,16 +53,18 @@ class DroneID:
         self.pilot_lon = location2bytes(longitude_home)
         self.pilot_lat = location2bytes(latitude_home)
 
-        self.altitude = int(kwargs['altitude']) if len(kwargs['altitude']) > 0  else struct.pack('<H', randomN(0,2**16-1)) # Max 16 bits little endian unsgined
-        self.height = struct.pack('<H', (randomN(0,2**16-1)))  # Max 16 bits little endian unsgined
+        self.altitude = int(kwargs['altitude']) if len(kwargs['altitude']) > 0  else randomN(0,2**16-1) # Max 16 bits little endian unsgined
+        self.height = randomN(0,2**16-1)  # Max 16 bits little endian unsgined
 
-        # ====== Drone axes motion ========
-        self.v_north =  struct.pack('<h', randomN((-2**15),2**15-1))  # 2 Bytes   little endian signed
-        self.v_east = struct.pack('<h', randomN((-2**15),2**15-1))
-        self.v_up =  struct.pack('<h', randomN((-2**15),2**15-1))  
-        self.pitch = struct.pack('<h', randomN((-2**15),2**15-1))         
-        self.roll = struct.pack('<h', randomN((-2**15),2**15-1))          
-        self.yaw = struct.pack('>h', 5729)# randomN((-2**15),2**15-1))            
+        # ====== Drone axes motion and axis speed========
+
+        #speed_aeroscope = (speed / 100)
+        self.v_north =  100 * randomN(-50, 50) # randomN((-2**15),2**15-1) 
+        self.v_east = 100 * randomN(-50, 50) #randomN((-2**15),2**15-1)
+        self.v_up =  100 * randomN(-50, 50) #randomN((-2**15),2**15-1)
+        self.pitch = randomN((-2**15),2**15-1)       
+        self.roll = randomN((-2**15),2**15-1)          
+        self.yaw = randomN((-2**15),2**15-1)            
 
         # ===== Drone's info =========
         self.prod_type = os.urandom(1) # b'x\10'
@@ -101,14 +103,14 @@ class DroneID:
         self.pilot_lon = location2bytes(pilot_lon)
         self.pilot_lat = location2bytes(pilot_lat)
 
-        self.altitude = struct.pack('<H', (randomN(0,2**16-1)))     # Max 32 bits little endian
-        self.height = struct.pack('<H', (randomN(0,2**16-1))) 
-        self.v_north = struct.pack('<h', randomN((-2**15),2**15-1))  # 2 Bytes   little endian signed
-        self.v_east = struct.pack('<h', randomN((-2**15),2**15-1))  # 2 Bytes   little endian signed
-        self.v_up =  struct.pack('<h', randomN((-2**15),2**15-1))  # 2 Bytes   little endian signed
-        self.pitch = struct.pack('<h', randomN((-2**15),2**15-1))          # 2 Bytes   little endian   signed
-        self.roll = struct.pack('<h', randomN((-2**15),2**15-1))           # 2 Bytes   little endian signed
-        self.yaw = struct.pack('<h', randomN((-2**15),2**15-1))            # 2 Bytes   little endian signed
+        self.altitude = randomN(0,2**15-1)     # Max 32 bits little endian
+        self.height = randomN(0,2**15-1)
+        self.v_north = randomN((-2**15),2**15-1)  # 2 Bytes   little endian signed
+        self.v_east = randomN((-2**15),2**15-1)  # 2 Bytes   little endian signed
+        self.v_up = randomN((-2**15),2**15-1)  # 2 Bytes   little endian signed
+        self.pitch = randomN((-2**15),2**15-1)  # 2 Bytes   little endian   signed
+        self.roll = randomN((-2**15),2**15-1)  # 2 Bytes   little endian signed
+        self.yaw = randomN((-2**15),2**15-1)  # 2 Bytes   little endian signed
         
         self.prod_type = b'\x10' # Make it random
         self.uuid = ''.join(random.choice(string.digits) for i in range(7))
@@ -126,14 +128,14 @@ class DroneID:
         self.attribute2byte(self.sernum),
         self.longitude_bytes,
         self.latitude_bytes,
-        self.attribute2byte(self.altitude),
-        self.height,
-        self.v_north,
-        self.v_east,
-        self.v_up,
-        self.yaw, # that changed from report.. it said pich here
-        self.roll,
-        self.pitch,
+        self.attribute2byte(self.altitude, signed=True),
+        self.attribute2byte(self.height, signed=True),
+        self.attribute2byte(self.v_north),
+        self.attribute2byte(self.v_east),
+        self.attribute2byte(self.v_up),
+        self.attribute2byte(self.yaw), # that changed from report.. it said pich here
+        self.attribute2byte(self.roll),
+        self.attribute2byte(self.pitch),
         b'\x00\x00\x00\x00', # Don't know what is going on with that field. It somehow modifies home location
         self.pilot_lat,
         self.pilot_lon,
@@ -168,10 +170,14 @@ class DroneID:
     '''
     Convert one droneID attribute into byte representation if it's not already so
     '''
-    def attribute2byte(self, attribute, endiannes='<'):
+    def attribute2byte(self, attribute, endiannes='<', signed = False):
         att_type = type(attribute)
         if att_type == str:
             p= str.encode(attribute)
+            return p
+
+        elif att_type == int and signed: # For height and altitude
+            p = struct.pack(''.join([endiannes, 'H']), attribute)
             return p
 
         elif att_type == int:
@@ -276,15 +282,17 @@ At the same time, it can be send a packet while the controller is waiting for ev
 '''
 def thread_send(packet):
     print("Inside Threat")
+    count = 0
     global is_event
     while is_event == 0:
+        count += 1
         try:
             sendp(packet[1], iface=interface, loop=0, count=1)
-            time.sleep(0.3)
+            time.sleep(0.2)
         except KeyboardInterrupt:
             break
  
-    print("Event. Gonna update the packet")
+    print("Old packet:  {} \n New Event.".format(count))
 
 '''
 Single Drone Spoofing
@@ -327,6 +335,7 @@ def one_drone():
     joystick = jstest.JSTest()
     print("Joystick  {}".format(joystick.gamepad))
 
+    boosted = False
     if joystick.gamepad:
         #ts= time.time()
         while 1:
@@ -352,26 +361,53 @@ def one_drone():
                     print("We got movement {} {}".format(axis, value))
                     if axis == "X": # Modify Longitude
                         print("Update longitude")
-                        drone.longitude = drone.longitude + float("{:.4f}".format(float(value/ 1000))) # To modify the 4 decimal digit
-
+                        drone.longitude = drone.longitude +  float("{:.4f}".format(float(value/ 1000))) # To modify the 4 decimal digit
                         # Substitute payload bytes corresponding to the longitude
                         drone.longitude_bytes = location2bytes(drone.longitude)
+
+                        drone.v_east =  (drone.v_east + 100 * value)  * value # All the time will increase the speed. 
+                        drone.v_north =  (drone.v_north - 50) if drone.v_north > 0 else drone.v_north + 50 # To reduce the speed on the other axis
 
                     elif axis == "Y": # Modify Latitude
                         print("Update latitude")
                         
-                        drone.latitude = drone.latitude + float("{:.4f}".format(float(value / 1000)))
+                        drone.latitude = drone.latitude + float("{:.4f}".format(float(value / 1000))) * (-1)
 
                         # Substitute payload bytes corresponding to the latitude 
                         drone.latitude_bytes = location2bytes(drone.latitude)
 
+                        drone.v_north =  (drone.v_north +  (-value) * 50)  * value
+                        drone.v_east =  (drone.v_east - 50) if drone.v_east > 0 else drone.v_east + 50
+
                     elif axis == "RY":
+                        # modify  and height
+                        print("Update latitude")
+                        if drone.altitude >= 0 and drone.altitude < 2**16-1:                       
+                            drone.altitude = drone.altitude + value * (-1)
+                            if drone.altitude <0:
+                                drone.altitude = 0
+                                pass
                         pass
                     elif axis == "RX":
+                        # modify yaw
                         pass
-                    # elif Modify Altitude
-                    # elif Modify Yaw
+                    elif axis == "TL": # move between 3 or 4 different speeds
 
+                       
+                        drone.v_east =  (drone.v_east + 200) % 2500# speed is divided by 100 in the aeroscope.If we want to increase 1 in the aeroscope, we add 100 here
+                        drone.v_north = (drone.v_east + 200) % 2500
+
+                    
+                    elif axis == "Z": # 
+                            drone.v_east = drone.v_east + 100 # speed is divided by 100 in the aeroscope.If we want to increase 1 in the aeroscope, we add 100 here
+                            drone.v_north = drone.v_north + 100
+
+                    elif axis == "RZ":
+                        drone.v_east = drone.v_east - 100
+                        drone.v_north = drone.v_north - 100
+
+                    else:
+                        continue
 
                 #Create new payload and update packet
                 new_payload = drone.build_telemetry()
@@ -388,6 +424,7 @@ def one_drone():
                 break
 
             print("Latitude: {} --- Longitude: {}".format(drone.latitude, drone.longitude))
+            print("Altitude: {} ".format(drone.altitude))
 
     
     else:             

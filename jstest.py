@@ -42,7 +42,7 @@ EVENT_ABB = (
 
 # This is to reduce noise from the PlayStation controllers
 # For the Xbox controller, you can set this to 0
-MIN_ABS_DIFFERENCE = 5
+MIN_ABS_DIFFERENCE = 20
 
 
 class JSTest(object):
@@ -52,8 +52,10 @@ class JSTest(object):
         self.old_btn_state = {}
         self.abs_state = {}
         self.last_event = {}
+
         self.axis = ""
         self.axis_value = 0
+        
         self.old_abs_state = {}
         self.abbrevs = dict(abbrevs)
         for key, value in self.abbrevs.items():
@@ -98,10 +100,13 @@ class JSTest(object):
     def process_event(self, event):
         """Process the event into a state."""
 
-        #print("Type: {} Code: {} State: {}".format(event.ev_type, event.code, event.state))
+        print("Type: {} Code: {} State: {}".format(event.ev_type, event.code, event.state))
 
-        print("Processing event")
+        #print("Processing event")
+ 
         if event.ev_type == 'Sync':
+            self.axis = None
+            self.axis_value = 0
             return
         if event.ev_type == 'Misc':
             return
@@ -115,14 +120,26 @@ class JSTest(object):
         if event.ev_type == 'Key':
             self.old_btn_state[abbv] = self.btn_state[abbv]
             self.btn_state[abbv] = event.state
+            difference = MIN_ABS_DIFFERENCE + 1
         if event.ev_type == 'Absolute':
             self.old_abs_state[abbv] = self.abs_state[abbv]
             self.abs_state[abbv] = event.state
+            difference = self.abs_state[abbv] - self.old_abs_state[abbv]
 
-            self.axis = event.code.split("_")[1] # X or Y
-            self.axis_value = -1 if float(event.state) < 0 else 1 # -1 or 1
-        
-        self.output_state(event.ev_type, abbv)
+
+        if (abs(difference)) > MIN_ABS_DIFFERENCE:
+            #print("Old: {} New {} Actual {}".format(self.old_abs_state[abbv], self.abs_state[abbv], event.state))
+            self.axis = event.code.split("_")[1] # X  Y RX RY RZ (button l2)
+
+            # Limit the values to -1, 1 or 0
+            if event.state < 0:
+                self.axis_value = -1
+            elif event.state == 0:
+                self.axis_value = 0
+            else:
+                self.axis_value = 1
+
+        #self.output_state(event.ev_type, abbv)
 
     def format_state(self):
         """Format the state."""
@@ -140,7 +157,7 @@ class JSTest(object):
         """Print out the output state."""
         if ev_type == 'Key':
             if self.btn_state[abbv] != self.old_btn_state[abbv]:
-               # print(self.format_state())
+                #print(self.format_state())
                 return
 
         if abbv[0] == 'H':
@@ -152,53 +169,36 @@ class JSTest(object):
             return
             #print(self.format_state())
 
-    '''
-    Returns where the left josystick is moving to. 
-    Horizontal (X)
-    Vertical (Y)
-    Type: Absolute
-    Code: ABS_X and ABS_Y (Left Joystick) ,  ABS_RX and ABS_RY (right Joystick)
-    
-    ToDo
-    Consider Diagonal movement
-    Let's add a boost ;)
-    Type: Absolute
-    Code: ABS_RZ
-    It will multiply the direction x3
-    '''
-    def get_motion(self):
-        return self.motion
 
         
     def process_events(self):
         """Process available events."""
         try:
-            print("before reading")
+            #print("before reading")
             events = self.gamepad._do_iter()
-            print("after")
+            #print("after")
 
         except EOFError:
             print("EOFERROR")
             events = []
             return
         if events is not None and len(events) > 0:
-            print("before loop")
+            #print("before loop")
             for event in events:
-                print("inside loop")
+                #print("inside loop")
                 self.process_event(event)
             
-            print("after loop")
+            #print("after loop")
 
-
-# def main():
+'''
+def main():
 #     """Process all events forever."""
-#     jstest = JSTest()
-#     while 1:
-#         jstest.process_events()
-#         print(jstest.get_motion())
+     jstest = JSTest()
+     while 1:
+         jstest.process_events()
 
 
-# if __name__ == "__main__":
-#     main()
-
+if __name__ == "__main__":
+     main()
+'''
 
