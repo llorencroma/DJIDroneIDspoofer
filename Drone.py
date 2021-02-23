@@ -21,28 +21,29 @@ class Drone:
             index= args[0] 
             point= args[1]
                    
-        self.ssid = kwargs['ssid'] if len(kwargs["ssid"]) > 0 else ''.join(["FAKE-", str(index + 1)])
+        self.ssid = kwargs['ssid'] if "ssid" in kwargs and len(kwargs["ssid"]) > 0 else ''.join(["FAKE-", str(index + 1)])
+        self.mac_address = "60:60:1f:%02x:%02x:%02x" % (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
         self.state = b'\x02M\x063\x1f' # Dunno what's exactly that
         self.sernum = ''.join(random.choice(Drone.random_source) for i in range(16))
         
         # INPUT * 174533.0 little endian
         # ====== Locations ===========
 
-        self.longitude = float(kwargs['lon']) if len(kwargs["lon"]) > 0  else self.random_location(point)[0]
+        self.longitude = float(kwargs['lon']) if "lon" in kwargs and len(kwargs["lon"]) > 0  else self.random_location(point)[0]
         #self.longitude_bytes = self.location2bytes(self.longitude)
-        self.latitude = float(kwargs['lat']) if len(kwargs["lat"]) > 0  else self.random_location(point)[1]
+        self.latitude = float(kwargs['lat']) if "lat" in kwargs and len(kwargs["lat"]) > 0  else self.random_location(point)[1]
         #self.latitude_bytes = self.location2bytes(self.latitude)
 
-        self.longitude_home = float(kwargs['home_lon']) if len(kwargs["home_lon"]) > 0  else self.random_location()[0]
+        self.longitude_home = float(kwargs['home_lon']) if "home_lon" in kwargs and len(kwargs["home_lon"]) > 0  else self.random_location()[0]
         #self.longitude_home = self.location2bytes(longitude_home)
-        self.latitude_home = float(kwargs['home_lat']) if len(kwargs["home_lat"]) > 0  else self.random_location()[1] 
+        self.latitude_home = float(kwargs['home_lat']) if "home_lat" in kwargs and len(kwargs["home_lat"]) > 0  else self.random_location()[1] 
         #self.latitude_home = self.location2bytes(latitude_home)
 
         # home and pilot location will be the same
-        self.pilot_lon = longitude_home
-        self.pilot_lat = latitude_home
+        self.pilot_lon = self.longitude_home
+        self.pilot_lat = self.latitude_home
 
-        self.altitude = int(kwargs['altitude']) if len(kwargs['altitude']) > 0  else self.randomN(0,2**16-1) # Max 16 bits little endian unsgined
+        self.altitude = int(kwargs['altitude']) if "altitude" in kwargs and len(kwargs['altitude']) > 0  else self.randomN(0,2**16-1) # Max 16 bits little endian unsgined
         self.height = self.randomN(0,2**16-1)  # Max 16 bits little endian unsgined
 
         # ====== Drone axes motion and axis speed========
@@ -57,7 +58,7 @@ class Drone:
 
         # ===== Drone's info =========
         self.prod_type = os.urandom(1) # b'x\10' # One byte length value
-        self.uuid = kwargs['uuid'] if len(kwargs['uuid']) > 0 else ''.join(random.choice(string.digits) for i in range(7))
+        self.uuid = kwargs['uuid'] if "uuid" in kwargs and len(kwargs['uuid']) > 0 else ''.join(random.choice(string.digits) for i in range(7))
         self.uuid_len = len(self.uuid)
 
         [print(attribute, getattr(self, attribute)) for attribute in dir(self) if not attribute.startswith("__") and not callable(self)]

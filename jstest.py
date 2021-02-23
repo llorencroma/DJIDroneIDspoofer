@@ -120,24 +120,20 @@ class JSTest(object):
         if event.ev_type == 'Key':
             self.old_btn_state[abbv] = self.btn_state[abbv]
             self.btn_state[abbv] = event.state
-            difference = MIN_ABS_DIFFERENCE + 1
         if event.ev_type == 'Absolute':
             self.old_abs_state[abbv] = self.abs_state[abbv]
             self.abs_state[abbv] = event.state
-            difference = self.abs_state[abbv] - self.old_abs_state[abbv]
 
 
-        if (abs(difference)) > MIN_ABS_DIFFERENCE:
-            #print("Old: {} New {} Actual {}".format(self.old_abs_state[abbv], self.abs_state[abbv], event.state))
-            self.axis = event.code.split("_")[1] # X  Y RX RY RZ (button l2)
+        self.axis = event.code.split("_")[1] # X  Y RX RY RZ (button l2)
 
-            # Limit the values to -1, 1 or 0
-            if event.state < 0:
-                self.axis_value = -1
-            elif event.state == 0:
-                self.axis_value = 0
-            else:
-                self.axis_value = 1
+        # Limit the values to -1, 1 or 0
+        if event.state < 0:
+            self.axis_value = -1
+        elif event.state == 0:
+            self.axis_value = 0
+        else:
+            self.axis_value = 1
 
         #self.output_state(event.ev_type, abbv)
 

