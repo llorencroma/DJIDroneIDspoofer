@@ -49,8 +49,8 @@ class Drone:
         # ====== Drone axes motion and axis speed========
 
         #speed_aeroscope = (speed / 100)
-        self.v_north =  100 * self.randomN(-50, 50) # self.randomN((-2**15),2**15-1) 
-        self.v_east = 100 * self.randomN(-50, 50) #self.randomN((-2**15),2**15-1)
+        self.v_north =  100 * self.randomN(-50, 50) # self.randomN((-2**15),2**15-1) # X
+        self.v_east = 100 * self.randomN(-50, 50) #self.randomN((-2**15),2**15-1) # Y
         self.v_up =  100 * self.randomN(-50, 50) #self.randomN((-2**15),2**15-1)
         self.pitch = self.randomN((-2**15),2**15-1)       
         self.roll = self.randomN((-2**15),2**15-1)          

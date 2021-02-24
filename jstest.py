@@ -43,6 +43,7 @@ EVENT_ABB = (
 # This is to reduce noise from the PlayStation controllers
 # For the Xbox controller, you can set this to 0
 MIN_ABS_DIFFERENCE = 20
+#DEADZONES = 1000 # Joystick movement needs to be clear otherwise it does not respond
 
 
 class JSTest(object):
@@ -52,7 +53,7 @@ class JSTest(object):
         self.old_btn_state = {}
         self.abs_state = {}
         self.last_event = {}
-
+        self.maxi = 0
         self.axis = ""
         self.axis_value = 0
         
@@ -123,17 +124,16 @@ class JSTest(object):
         if event.ev_type == 'Absolute':
             self.old_abs_state[abbv] = self.abs_state[abbv]
             self.abs_state[abbv] = event.state
-
-
-        self.axis = event.code.split("_")[1] # X  Y RX RY RZ (button l2)
-
-        # Limit the values to -1, 1 or 0
-        if event.state < 0:
-            self.axis_value = -1
-        elif event.state == 0:
+  
+        #print("Type: {} Code: {} State: {}".format(event.ev_type, event.code, event.state))
+        if (event.code == "ABS_X" or event.code == "ABS_Y" or event.code == "ABS_RX" or event.code == "ABS_RY") and abs(event.state) < 15000:
+            self.axis = None
             self.axis_value = 0
         else:
-            self.axis_value = 1
+            self.axis = event.code.split("_")[1] # X  Y RX RY RZ (button l2)
+            self.axis_value = event.state
+
+        
 
         #self.output_state(event.ev_type, abbv)
 
@@ -186,7 +186,6 @@ class JSTest(object):
             
             #print("after loop")
 
-'''
 def main():
 #     """Process all events forever."""
      jstest = JSTest()
@@ -196,5 +195,5 @@ def main():
 
 if __name__ == "__main__":
      main()
-'''
+
 

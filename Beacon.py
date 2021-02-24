@@ -3,6 +3,10 @@ from scapy.layers.dot11 import *
 from scapy.utils import rdpcap, hexdump
 from scapy.sendrecv import sendp
 import random
+import calendar;
+import time;
+
+
 
 class Beacon:
     def __init__(self, source_address, ssid ):
@@ -27,7 +31,9 @@ class Beacon:
         self.seq_number = 0                     # hardcoded
 
         # Frame Body -- 802.11 Management Beacon
-        self.b_timestamp = 1608204089   # hardcoded
+        ts = calendar.timegm(time.gmtime())
+
+        self.b_timestamp = ts   # hardcoded
         self.b_interval = 102           # hardcoded
         self.cap_flags = 0x0431         # Capability flags... hardcoded
 
