@@ -8,6 +8,7 @@ import jstest
 import time, os
 import threading
 from Drone import *
+import hexdump
 
 
 
@@ -109,6 +110,7 @@ def one_drone():
         global is_event
         drone.v_east = 0
         drone.v_north = 0
+
         while 1:
             updated = True           
             try:
@@ -147,6 +149,7 @@ def one_drone():
 
                     if axis == "HAT0X": # Modify Longitude
                         print("Update longitude")
+
                         if value != 0:
                             # To modify the 4 decimal digit
                             drone.longitude = drone.longitude +  float("{:.4f}".format(float(value/ 1000))) 
@@ -257,9 +260,9 @@ def random_spoof(n, point=None):
         payload = drone.build_telemetry()
         telemetry_packet = create_packet(beacon_base_copy, payload)
         packet_list.append(telemetry_packet)
-    
+    hexdump(packet_list)
     print("=========All drones are ready ==================")
-    sendp(packet_list, iface=interface, loop=1, inter=2)
+    sendp(packet_list[-1], iface=interface, loop=0, count=1)
 
 
 

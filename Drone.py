@@ -40,10 +40,10 @@ class Drone:
         #self.latitude_home = self.location2bytes(latitude_home)
 
         # home and pilot location will be the same
-        self.pilot_lon = self.longitude_home
-        self.pilot_lat = self.latitude_home
+        self.pilot_lon = float(kwargs['home_lon']) if "home_lon" in kwargs and len(kwargs["home_lon"]) > 0  else self.random_location()[0]
+        self.pilot_lat = float(kwargs['home_lat']) if "home_lat" in kwargs and len(kwargs["home_lat"]) > 0  else self.random_location()[1] 
 
-        self.altitude = int(kwargs['altitude']) if "altitude" in kwargs and len(kwargs['altitude']) > 0  else self.randomN(0,2**16-1) # Max 16 bits little endian unsgined
+        self.altitude = 250 #int(kwargs['altitude']) if "altitude" in kwargs and len(kwargs['altitude']) > 0  else self.randomN(0,2**16-1) # Max 16 bits little endian unsgined
         self.height = self.randomN(0,2**16-1)  # Max 16 bits little endian unsgined
 
         # ====== Drone axes motion and axis speed========
@@ -97,6 +97,22 @@ class Drone:
         drone2bytes = b''.join([drone2bytes,b'\x00'*(91 - len(drone2bytes))]) 
 
         return drone2bytes
+
+    '''
+    Update longitude and speed on the direction of the aircraft motion's according to the XBOX event
+    '''
+    def update_longitude(self, axis_direction):
+        self.longitude = self.longitude +  float("{:.4f}".format(float(axis_direction/ 1000))) 
+        self.v_east =  floor((self.v_east + 100 * axis_direction))   # Increase speed on this direction so it pointer points to that way
+        self.v_north =  floor((self.v_north - 50)) if self.v_north > 0 else floor(self.v_north + 50) # To reduce the speed on the other axis
+    
+    '''
+    Update longitude and speed on the direction of the aircraft motion's according to the XBOX event
+    '''
+    def update_latitude(self, axis_direction):
+        self.latitude = self.latitude + float("{:.4f}".format(float(axis_direction / 1000))) * (-1) # -1 to correct the inverted sign on the XBOX controller Y axis 
+        self.v_north =  floor(self.v_north +  (-axis_direction) * 100)
+        self.v_east =  floor(self.v_east - 50) if self.v_east > 0 else floor(self.v_east + 50)
 
     '''
     Returns the payload containing the DroneID flight info
