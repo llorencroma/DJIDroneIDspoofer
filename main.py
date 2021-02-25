@@ -9,15 +9,17 @@ import threading
 from Drone import *
 from scapy.utils import PcapWriter
 import inputs
+from inputs import get_key
 
 MAX_TRIGGERS = 1023
 MAX_JXY = 32767
+
 
 #### TODO
 #  YAW ROLL PITCH IMPLEMENTATION
 #  LATITUDE MOVEMENT ARE WAY BIGGER, WHY?
 #  Speed, height, altitude are chosen randomly, but max value is set to sth reasonable... not 2**16-1
-#  
+#  CONTROL BOUNDARIES. MAximum and minimum values
 #
 #
 
@@ -66,19 +68,22 @@ def thread_send(d: Drone, beacon_base_packet):
 
     #packets_txt.write(packet_list[1][Dot11EltVendorSpecific][len([packet_list[1][Dot11EltVendorSpecific]])-1].show(dump=True))
     while is_finish == 0:
-        count += 1
+        
         time.sleep(0.5)
         try:
             new_payload = d.build_telemetry()
 
             if new_payload != old_payload: # Updates on drone, otherwise send same packet
+                count = 0
                 print("UPDATED")
                 packet = update_packet(packet, new_payload)
                 print("Latitude: {} --- Longitude: {}".format(d.latitude, d.longitude))
                 print("Altitude: {} ".format(d.altitude))
                 print("Speed: {}".format(sqrt(d.v_north **2 + d.v_east **2)/100))
 
-            sendp(packet, iface=interface, verbose=1, loop=0, count=1)
+            sendp(packet, iface=interface, verbose=0, loop=0, count=1)
+            count += 1
+            print("Sent {}".format(count))
             old_payload = new_payload
             time.sleep(0.5)
 
@@ -121,14 +126,25 @@ def process_event(drone, axis, value, ev_type):
         print("Update latitude")
         drone.update_latitude(value_sign) 
 
-    if axis == "HAT0X": # Modify Longitude
+    if axis == "HAT0X" or axis == "LEFT" or axis == "RIGHT": # Modify Longitude
         
         print("Update longitude")
+
+        if axis == "LEFT":
+            value_sign = -1
+        else:
+            value_sign = 1
+
         drone.update_longitude(value_sign)
             
-    elif axis == "HAT0Y": # Modify Latitude
+    elif axis == "HAT0Y" or axis == "UP" or axis == "DOWN": # Modify Latitude
         
         print("Update latitude")
+        if axis == "DOWN":
+            value_sign = 1 # To invert the sign as in the XBOX controller
+        else:
+            value_sign = -1
+
         drone.update_latitude(value_sign)
         
     elif axis == "RY":
@@ -168,6 +184,7 @@ def process_event(drone, axis, value, ev_type):
         drone.longitude, drone.latitude = drone.random_location()
     
     return True
+
 
 def get_gamepad():
     try:
@@ -210,15 +227,14 @@ def one_drone():
     
     joystick = get_gamepad()
     print("Joystick  {}".format(joystick))
-
+    send_thread = threading.Thread(target=thread_send, args=(drone, beacon_base_packet))
+    send_thread.start()
     if joystick is not None:
         global is_finish # To stop the thread
         drone.v_east = 0
         drone.v_north = 0
 
-        send_thread = threading.Thread(target=thread_send, args=(drone, beacon_base_packet))
-        send_thread.start()
-
+        # MAIN LOOP for JOYSTICK
         while 1:      
             try:
                 print("Waiting event")
@@ -243,13 +259,27 @@ def one_drone():
         '''
         Spoofing a single drone without any motion
         '''
+        # MAIN LOOP FOR KEYBOARD
+        while 1:
+            try:
+                events = get_key()
+
+                for event in events:
+                    axis, value, evtype = event.code.split("_")[1], event.state, event.ev_type
+                    if axis == "LEFT" or axis == "RIGHT" or axis == "UP" or axis == "DOWN":
+                        process_event(drone, axis, value, evtype)
+            except KeyboardInterrupt:
+                is_finish = 1
+                send_thread.join()
+                break
+        # No movement
         # Create the DJI payload in bytes and build the packet with scapy
-        telemetry_payload = drone.build_telemetry()
-        telemetry_packet = create_packet(beacon_base_packet, telemetry_payload)
-        packet_list = []
-        packet_list.append(finfo_packet)
-        packet_list.append(telemetry_packet)
-        sendp(packet_list, iface=interface, loop=1, inter=0.5)
+        # telemetry_payload = drone.build_telemetry()
+        # telemetry_packet = create_packet(beacon_base_packet, telemetry_payload)
+        # packet_list = []
+        # packet_list.append(finfo_packet)
+        # packet_list.append(telemetry_packet)
+        # sendp(packet_list, iface=interface, loop=1, inter=0.5)
 
 def random_spoof(n, point=None):
     
