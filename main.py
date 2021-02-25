@@ -1,18 +1,25 @@
 from Beacon import *
 import struct
 import sys, getopt, argparse
-from scapy.sendrecv import sendp, send
+from scapy.sendrecv import sendp
 import random, string
 from math import floor, sqrt
-import jstest
 import time, os, calendar
 import threading
 from Drone import *
 from scapy.utils import PcapWriter
+import inputs
 
 MAX_TRIGGERS = 1023
 MAX_JXY = 32767
 
+#### TODO
+#  YAW ROLL PITCH IMPLEMENTATION
+#  LATITUDE MOVEMENT ARE WAY BIGGER, WHY?
+#  Speed, height, altitude are chosen randomly, but max value is set to sth reasonable... not 2**16-1
+#  
+#
+#
 
 '''
    Assemble the DJI payload to a 802.11 beacon packet
@@ -55,8 +62,7 @@ def thread_send(d: Drone, beacon_base_packet):
     global is_finish
 
     old_payload = d.build_telemetry()
-
-    packet = create_packet(beacon_base_packet, old_payload)
+    packet = create_packet(beacon_base_packet, old_payload) # build first packet ever
 
     #packets_txt.write(packet_list[1][Dot11EltVendorSpecific][len([packet_list[1][Dot11EltVendorSpecific]])-1].show(dump=True))
     while is_finish == 0:
@@ -64,7 +70,8 @@ def thread_send(d: Drone, beacon_base_packet):
         time.sleep(0.5)
         try:
             new_payload = d.build_telemetry()
-            if new_payload != old_payload:
+
+            if new_payload != old_payload: # Updates on drone, otherwise send same packet
                 print("UPDATED")
                 packet = update_packet(packet, new_payload)
                 print("Latitude: {} --- Longitude: {}".format(d.latitude, d.longitude))
@@ -74,9 +81,11 @@ def thread_send(d: Drone, beacon_base_packet):
             sendp(packet, iface=interface, verbose=1, loop=0, count=1)
             old_payload = new_payload
             time.sleep(0.5)
+
         except KeyboardInterrupt:
             is_finish = 1
             break
+
     print("Exiting Thread. Packet sent {} times".format(count))
 
 
@@ -84,9 +93,9 @@ def normalize(value, max=MAX_TRIGGERS, minimum=1):
     n = (value - minimum) / (max - minimum)
     return n
 
-
 def process_event(drone, axis, value, ev_type):
-    try:
+
+    try: # To know in which direction of the axis is the event
         value_sign = float(value / abs(value)) #( -1 or 1)
     except ZeroDivisionError:
         return False
@@ -141,7 +150,7 @@ def process_event(drone, axis, value, ev_type):
         drone.v_north = (drone.v_east + 200) % 2500
         
     elif axis == "Z": # Increase speed's values, both in X and Y axis
-        if value == 0: # If not pressed
+        if value == 0: # If not pressed ToDo ... not working. Do we really want that
             drone.v_north = 0
             drone.v_east = 0
         # Consider if speed is in negative or positive
@@ -159,6 +168,15 @@ def process_event(drone, axis, value, ev_type):
         drone.longitude, drone.latitude = drone.random_location()
     
     return True
+
+def get_gamepad():
+    try:
+        joystick = inputs.devices.gamepads[0]
+        print("Gamepad assigned")
+    except IndexError:
+        print("No gamepad found")
+        joystick = None
+    return joystick
 
 '''
 Single Drone Spoofing
@@ -189,11 +207,11 @@ def one_drone():
     # Flight Info beacons It won't change
     finfo_payload = drone.build_finfo() # ToDo Get user input toset flight info
     finfo_packet = create_packet(beacon_base_packet,finfo_payload)
+    
+    joystick = get_gamepad()
+    print("Joystick  {}".format(joystick))
 
-    joystick = jstest.JSTest()
-    print("Joystick  {}".format(joystick.gamepad))
-
-    if joystick.gamepad:
+    if joystick is not None:
         global is_finish # To stop the thread
         drone.v_east = 0
         drone.v_north = 0
@@ -204,7 +222,7 @@ def one_drone():
         while 1:      
             try:
                 print("Waiting event")
-                events = joystick.gamepad._do_iter() # It blocks untl event is detected
+                events = joystick._do_iter() # It blocks untl event is detected
                 
                 #does not work still blocks...
                 if events is None or len(events) == 0:

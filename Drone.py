@@ -43,8 +43,9 @@ class Drone:
         self.pilot_lon = float(kwargs['home_lon']) if "home_lon" in kwargs and len(kwargs["home_lon"]) > 0  else self.random_location()[0]
         self.pilot_lat = float(kwargs['home_lat']) if "home_lat" in kwargs and len(kwargs["home_lat"]) > 0  else self.random_location()[1] 
 
-        self.altitude = 250 #int(kwargs['altitude']) if "altitude" in kwargs and len(kwargs['altitude']) > 0  else self.randomN(0,2**16-1) # Max 16 bits little endian unsgined
-        self.height = self.randomN(0,2**16-1)  # Max 16 bits little endian unsgined
+        # Make ranges reasonable
+        self.altitude = int(kwargs['altitude']) if "altitude" in kwargs and len(kwargs['altitude']) > 0  else self.randomN(0,150) #2**16-1) # Max 16 bits little endian unsgined
+        self.height = self.randomN(0,500)# 2**16-1)  # Max 16 bits little endian unsgined
 
         # ====== Drone axes motion and axis speed========
 
