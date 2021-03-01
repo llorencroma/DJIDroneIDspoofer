@@ -53,9 +53,13 @@ class Drone:
         self.v_north =  100 * self.randomN(-50, 50) # self.randomN((-2**15),2**15-1) # X
         self.v_east = 100 * self.randomN(-50, 50) #self.randomN((-2**15),2**15-1) # Y
         self.v_up =  100 * self.randomN(-50, 50) #self.randomN((-2**15),2**15-1)
+
+        # Aeroscope defaul value is 180. If we sent \x00\x00 it will show 180
+        # From here it shows:   180 + (received/100) / 57.296
+        # If we want to show 190 we send (190-180) * 100
         self.pitch = self.randomN((-2**15),2**15-1)       
         self.roll = self.randomN((-2**15),2**15-1)          
-        self.yaw = self.randomN((-2**15),2**15-1)            
+        self.yaw = self.randomN(0,360)            
 
         # ===== Drone's info =========
         self.prod_type = os.urandom(1) # b'x\10' # One byte length value
@@ -81,7 +85,7 @@ class Drone:
         self.attribute2byte(self.v_north),
         self.attribute2byte(self.v_east),
         self.attribute2byte(self.v_up),
-        self.attribute2byte(self.yaw), # that changed from report.. it said pich here
+        self.attribute2byte((self.yaw - 180) * 100), # that changed from report.. it said pich here
         self.attribute2byte(self.roll),
         self.attribute2byte(self.pitch),
         b'\x00\x00\x00\x00', # Don't know what is going on with that field. It somehow modifies home location
@@ -116,6 +120,16 @@ class Drone:
         self.v_east =  floor(self.v_east - 50) if self.v_east > 0 else floor(self.v_east + 50)
 
     '''
+    Update yaw 
+    0º and 180º point to the southand north respectively
+    90º and 270 point to the weast and east respectively
+    '''
+    def update_yaw(self, axis_direction):
+        print("DIRECTION {}".format(axis_direction))
+        self.yaw = int(floor((self.yaw + (axis_direction/4))) % 360) # positive rotates right, negative left. Reduce the effect of so many events
+        
+
+    '''
     Returns the payload containing the DroneID flight info
     '''
     def build_finfo(self, identification="identification", flight_info="info"):
@@ -143,6 +157,7 @@ class Drone:
     Convert one droneID attribute into byte representation if it's not already so
     '''
     def attribute2byte(self, attribute, endiannes='<', signed = False):
+        # Signed should be the contrary
         att_type = type(attribute)
         if att_type == str:
             p= str.encode(attribute)

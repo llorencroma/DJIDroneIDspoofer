@@ -126,13 +126,13 @@ def process_event(drone, axis, value, ev_type):
         print("Update latitude")
         drone.update_latitude(value_sign) 
 
-    if axis == "HAT0X" or axis == "LEFT" or axis == "RIGHT": # Modify Longitude
+    elif axis == "HAT0X" or axis == "LEFT" or axis == "RIGHT": # Modify Longitude
         
         print("Update longitude")
 
         if axis == "LEFT":
             value_sign = -1
-        else:
+        elif axis == "RIGHT":
             value_sign = 1
 
         drone.update_longitude(value_sign)
@@ -142,7 +142,7 @@ def process_event(drone, axis, value, ev_type):
         print("Update latitude")
         if axis == "DOWN":
             value_sign = 1 # To invert the sign as in the XBOX controller
-        else:
+        elif axis == "UP":
             value_sign = -1
 
         drone.update_latitude(value_sign)
@@ -156,9 +156,10 @@ def process_event(drone, axis, value, ev_type):
             if drone.altitude <0:
                 drone.altitude = 0
 
-    elif axis == "RX":
+    elif axis == "RX" and abs(value) > 17000:
         # modify yaw
-        return False
+        
+        drone.update_yaw(value_sign)
 
     # Change speed to show 3 different colors.
     elif axis == "TL" and value == 1: # Skip when button released event.
@@ -233,6 +234,8 @@ def one_drone():
         global is_finish # To stop the thread
         drone.v_east = 0
         drone.v_north = 0
+        #drone.yaw = 0
+        
 
         # MAIN LOOP for JOYSTICK
         while 1:      
