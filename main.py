@@ -235,8 +235,6 @@ def one_drone():
         drone.v_east = 0
         drone.v_north = 0
         #drone.yaw = 0
-        
-
         # MAIN LOOP for JOYSTICK
         while 1:      
             try:
@@ -275,7 +273,7 @@ def one_drone():
                 is_finish = 1
                 send_thread.join()
                 break
-        # No movement
+        # No movement version
         # Create the DJI payload in bytes and build the packet with scapy
         # telemetry_payload = drone.build_telemetry()
         # telemetry_packet = create_packet(beacon_base_packet, telemetry_payload)
