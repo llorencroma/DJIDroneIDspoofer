@@ -85,7 +85,7 @@ class Drone:
         self.attribute2byte(self.v_north),
         self.attribute2byte(self.v_east),
         self.attribute2byte(self.v_up),
-        self.attribute2byte((self.yaw - 180) * 100), # that changed from report.. it said pich here
+        self.attribute2byte(int(floor((self.yaw - 180) * 100))), # that changed from report.. it said pich here
         self.attribute2byte(self.roll),
         self.attribute2byte(self.pitch),
         b'\x00\x00\x00\x00', # Don't know what is going on with that field. It somehow modifies home location
@@ -119,6 +119,14 @@ class Drone:
         self.v_north =  floor(self.v_north +  (-axis_direction) * 100)
         self.v_east =  floor(self.v_east - 50) if self.v_east > 0 else floor(self.v_east + 50)
 
+   
+    def update_pilot_longitude(self, axis_direction):
+        self.pilot_lon = self.pilot_lon +  float("{:.4f}".format(float(axis_direction/ 1000))) 
+        
+    def update_pilot_latitude(self, axis_direction):
+        self.pilot_lat = self.pilot_lat + float("{:.4f}".format(float(axis_direction / 1000))) * (-1) # -1 to correct the inverted sign on the XBOX controller Y axis 
+       
+
     '''
     Update yaw 
     0º and 180º point to the southand north respectively
@@ -126,8 +134,8 @@ class Drone:
     '''
     def update_yaw(self, axis_direction):
         print("DIRECTION {}".format(axis_direction))
-        self.yaw = int(floor((self.yaw + (axis_direction/4))) % 360) # positive rotates right, negative left. Reduce the effect of so many events
-        
+        self.yaw = (self.yaw + (axis_direction/3)) % 360  # positive rotates right, negative left. Reduce the effect of so many events
+       
 
     '''
     Returns the payload containing the DroneID flight info

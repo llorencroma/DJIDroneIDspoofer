@@ -98,7 +98,7 @@ def normalize(value, max=MAX_TRIGGERS, minimum=1):
     n = (value - minimum) / (max - minimum)
     return n
 
-def process_event(drone, axis, value, ev_type):
+def process_event(drone, axis, value, ev_type, pilot_mode):
 
     try: # To know in which direction of the axis is the event
         value_sign = float(value / abs(value)) #( -1 or 1)
@@ -116,38 +116,41 @@ def process_event(drone, axis, value, ev_type):
 
     print("Type: {} Code: {} State: {}".format(ev_type, axis, value)) # Events we actually want
 
-    if axis == "X": # Increase Longitude and speed according to value
+    if axis == "X" or axis == "LEFT" or axis == "RIGHT": # Increase Longitude and speed according to value
         
         print("Update longitude")
-        drone.update_longitude(value_sign) 
-
-    elif axis == "Y": # Modify Latitude
-         
-        print("Update latitude")
-        drone.update_latitude(value_sign) 
-
-    elif axis == "HAT0X" or axis == "LEFT" or axis == "RIGHT": # Modify Longitude
-        
-        print("Update longitude")
-
         if axis == "LEFT":
             value_sign = -1
         elif axis == "RIGHT":
             value_sign = 1
 
-        drone.update_longitude(value_sign)
-            
-    elif axis == "HAT0Y" or axis == "UP" or axis == "DOWN": # Modify Latitude
-        
+        drone.update_longitude(value_sign) 
+
+    elif axis == "Y" or axis == "UP" or axis == "DOWN": # Modify Latitude
+         
         print("Update latitude")
+
         if axis == "DOWN":
             value_sign = 1 # To invert the sign as in the XBOX controller
         elif axis == "UP":
             value_sign = -1
 
-        drone.update_latitude(value_sign)
+        drone.update_latitude(value_sign) 
+
+    elif axis == "HAT0X" : # Modify Longitude
+        
+        print("Update Pilot longitude")
+
+        drone.update_pilot_longitude(value_sign)
+            
+    elif axis == "HAT0Y": # Modify Latitude
+        
+        print("Update Pilot latitude")
+
+        drone.update_pilot_latitude(value_sign)
         
     elif axis == "RY":
+
         print("Update altitude")
         # Increase Altitude (and Vertical Speed)
         # Minimum Altitude 0. ToDo limit upper boundary
@@ -158,18 +161,20 @@ def process_event(drone, axis, value, ev_type):
 
     elif axis == "RX" and abs(value) > 17000:
         # modify yaw
-        
         drone.update_yaw(value_sign)
 
     # Change speed to show 3 different colors.
     elif axis == "TL" and value == 1: # Skip when button released event.
+        
         drone.v_east =  (drone.v_east + 200) % 2500# speed is divided by 100 in the aeroscope.If we want to increase 1 in the aeroscope, we add 100 here
         drone.v_north = (drone.v_east + 200) % 2500
         
     elif axis == "Z": # Increase speed's values, both in X and Y axis
+        
         if value == 0: # If not pressed ToDo ... not working. Do we really want that
             drone.v_north = 0
             drone.v_east = 0
+
         # Consider if speed is in negative or positive
         elif value == MAX_TRIGGERS: # keep increasing
             drone.v_east = floor(drone.v_east + 100) if drone.v_east > 0 else floor(drone.v_east - 100)
@@ -183,6 +188,7 @@ def process_event(drone, axis, value, ev_type):
     elif axis == "MODE": # Random position
         #restart = True
         drone.longitude, drone.latitude = drone.random_location()
+        drone.pilot_lon, drone.pilot_lat = drone.random_location()
     
     return True
 
@@ -234,6 +240,7 @@ def one_drone():
         global is_finish # To stop the thread
         drone.v_east = 0
         drone.v_north = 0
+        pilot_mode = False
         #drone.yaw = 0
         # MAIN LOOP for JOYSTICK
         while 1:      
@@ -250,7 +257,7 @@ def one_drone():
                     # print("Type: {} Code: {} State: {}".format(event.ev_type, event.code, event.state))
 
                     axis, value, evtype = event.code.split("_")[1], event.state, event.ev_type
-                    process_event(drone, axis, value, evtype)
+                    process_event(drone, axis, value, evtype, pilot_mode)
 
             except KeyboardInterrupt:
                 is_finish = 1
