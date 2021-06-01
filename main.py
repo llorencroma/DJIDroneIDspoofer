@@ -98,7 +98,7 @@ def normalize(value, max=MAX_TRIGGERS, minimum=1):
     n = (value - minimum) / (max - minimum)
     return n
 
-def process_event(drone, axis, value, ev_type, pilot_mode):
+def process_event(drone, axis, value, ev_type):
 
     try: # To know in which direction of the axis is the event
         value_sign = float(value / abs(value)) #( -1 or 1)
@@ -257,7 +257,7 @@ def one_drone():
                     # print("Type: {} Code: {} State: {}".format(event.ev_type, event.code, event.state))
 
                     axis, value, evtype = event.code.split("_")[1], event.state, event.ev_type
-                    process_event(drone, axis, value, evtype, pilot_mode)
+                    process_event(drone, axis, value, evtype)
 
             except KeyboardInterrupt:
                 is_finish = 1
