@@ -47,5 +47,4 @@ With that feature, X packets with random payloads will be spoofed around a certa
 
 
 ## ToDo
-1. Could be useful to Dockerize it?
-2. Build a low-cost Aeroscope so you can see exactly how the spoofed DroneIds are.
+1. Build a low-cost Aeroscope so you can see exactly how the spoofed DroneIds are.
