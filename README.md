@@ -50,3 +50,5 @@ With that feature, X packets with random payloads will be spoofed around a certa
 1. Build a low-cost Aeroscope so you can see exactly how the spoofed DroneIds are.
 2. Create requirements file
 3. Clean files
+4. Add comments and clarify some points
+5. Prepare a whole pipe-line for demo
