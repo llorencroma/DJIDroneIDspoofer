@@ -15,7 +15,7 @@ An Aeroscope to visualize how the drone is visualised (working on a cheap Aerosc
 
 
 ## Usage
-
+Now you can directly run `run-demo.sh` and choose one spoofing mode. You need to know the interface name in advance.
 ### Set interface in monitor mode
 First, you need to know the interface's name. Run the following command and copy the name of the interface to be used for transmiting:
 
@@ -26,7 +26,7 @@ Second:
 `$ sudo ./interface-monitor.sh <interface-name>`
 
 ### 1. Spoof a single DroneID
-If you have an XBOX controller, you will be able to control: latitude, longitude, pilot longitude, pilot latitude, speed, altitude and yaw (where the aircraft is pointing to).
+If you have an XBOX controller or keyboard, you will be able to control: latitude, longitude, pilot longitude, pilot latitude, speed, altitude and yaw (where the aircraft is pointing to).
 Otherwise, keyboard arrow can be used to modify latitude and longitude.
 
 `$ sudo python3 main.py -i <interface-name> `
@@ -41,10 +41,7 @@ With that feature, X packets with random payloads will be spoofed around a certa
 
 `$ sudo python3 main.py -i <interface-name> -r <X> -a '<latitude> <longitude>'`
 
-## Other considerations
-1. Sometimes the interface will stop transmiting with `Network is down` error. Set it to monitor mode again.
+## Other considerations / Troubleshooting
+1. Sometimes the interface will stop transmiting with `Network is down` error. Run `./interface-monitor.sh` again.
 2. Send packets with Scapy requires privileges, that is why `sudo` command is required.
-
-
-## ToDo
-1. Build a low-cost Aeroscope so you can see exactly how the spoofed DroneIds are.
+3. If you see 0 kb/s in the Aeroscope (top-left corner): do step 1 or unplug/plug usb from aeroscope
