@@ -44,4 +44,6 @@ With that feature, X packets with random payloads will be spoofed around a certa
 ## Other considerations / Troubleshooting
 1. Sometimes the interface will stop transmiting with `Network is down` error. Run `./interface-monitor.sh` again.
 2. Send packets with Scapy requires privileges, that is why `sudo` command is required.
+<<<<<<< HEAD
 3. If you see 0 kb/s in the Aeroscope (top-left corner): do step 1 or unplug/plug usb from aeroscope
+=======
