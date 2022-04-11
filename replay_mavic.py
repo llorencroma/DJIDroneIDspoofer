@@ -90,19 +90,23 @@ ie_rates = Dot11Elt(ID='Rates', len=8, info = b'\x82\x84\x8b\x96\x0c\x12\x18\x24
 
 # == Information Element: Vendor Specifics (221)
 
-# 
+
+
 # Captured from DJI MAVIC. No GPS signal
 # First one sends telemetry. Second one sends Flight Information
 
+# Telemetry
 vendor_payload = b'Xb\x13\x10\x02M\x063\x1f0K1CG6G3AH8V2M\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xef\xff\x0c\x00\x00\x00\x00\x00\x00\x00\xb0C\x85\xb3\xa0(v\x01\x00\x00E\x89|\x00\xcc=\x14\x00\x00\x00\x00\x00\x00\x00\x00\x00\x18\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
 
-
+# Flight Info
 vendor_payload2 = b'Xb\x13\x113K1CG6G3AH8V2M\x00\x00\xcc\xaa\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
 
 
 
 # Vendor Specific: 26:37:12 (DJI)
 ie_vendor_dji = Dot11EltVendorSpecific(ID=221, len = len(vendor_payload) + 3 ,oui=0x263712, info = vendor_payload)
+# Flight Info
+ie_vendor_dji_flighT_info = Dot11EltVendorSpecific(ID=221, len = len(vendor_payload2) + 3 ,oui=0x263712, info = vendor_payload2)
 
 
 # We could add country info element since this info is received by the Aeroscope
@@ -111,7 +115,9 @@ ie_vendor_dji = Dot11EltVendorSpecific(ID=221, len = len(vendor_payload) + 3 ,ou
 # Let's build the packet
 
 # Sending two DroneID on the same packet does not work
-packet = RadioTap() / Dot11() / beacon_fields / ie_ssid / ie_rates / ie_vendor_dji# Assemble all parts
+#packet = RadioTap() / Dot11() / beacon_fields / ie_ssid / ie_rates / ie_vendor_dji# Assemble all parts
+
+packet = RadioTap() / Dot11() / beacon_fields / ie_ssid / ie_rates #/ ie_vendor_dji
 packet.subtype = frame_subtype
 packet.type = frame_type
 packet.addr1 = dest_addr
@@ -119,5 +125,12 @@ packet.addr2 = src_addr
 packet.addr3 = src_addr
 packet.SC = fragment_number + seq_number
 
-sendp(packet,iface= interface, loop = 1, inter= 0.3)
+packet_flightinfo = packet
 
+packet = packet / ie_vendor_dji
+packet_flightinfo = packet_flightinfo /ie_vendor_dji_flighT_info
+
+packet_list = [packet, packet_flightinfo]
+print(packet_list)
+
+sendp(packet,iface= interface, loop = 1, inter= 0.3ß
