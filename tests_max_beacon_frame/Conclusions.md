@@ -1,5 +1,6 @@
-#Conclusions
-##Beacon Frame
+# Conclusions
+
+## Beacon Frame
 
   * Mac header: 24 bytes
   * Frame body: variable length (0 - 2320 bytes)
@@ -10,7 +11,7 @@
 The maximum length of a beacon frame is 2348 bytes.
 
 
-##Script
+## Script
 
 |  Script                           |  Info                                                                                                                                                               |
 |-----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -27,12 +28,12 @@ The maximum length of a beacon frame is 2348 bytes.
 | max_fields_max_flightLog.py       | Same as max_fields_before_dji_payload.py but with the payload of max_flightLog_entry.py                                                                             |
 
 
-##Results
-The Aeroscope accepts a maximum number of bytes that is around 842. By sending a bigger beacon frame the Aeroscope simply discards the other bytes.
+## Results
+The Aeroscope accepts a maximum number of bytes that is around 842 (if more bytes are sent: if they are sent after the dji payload the Aeroscope discards them, if they are sent before the dji payload the Aeroscope does not show properly the information contained in the Remote ID). So, by sending a bigger beacon frame the Aeroscope simply discards the other bytes.
 
   * The maximum length in scapy for a beacon field is 255 bytes
   * The maximum length in scapy for a beacon frame is ~1490 bytes
-  * From the scripts under the folder Tests, it is possible to state that before detecting the presence of a dji drone, the Aeroscope accepts from 835 to 841 bytes
+  * From the scripts under the folder Tests, it is possible to state that before detecting the **presence** of a dji drone, the Aeroscope accepts from 835 to 841 bytes (maximum limit to detect presence)
 
 
 *See pdf for results targeting the Aeroscope storage*
