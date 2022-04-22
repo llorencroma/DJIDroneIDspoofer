@@ -118,7 +118,7 @@ vendor2 = Dot11EltVendorSpecific(ID=221, len=len(vendor2_payload)+3, oui= 0x4545
 
 #random payload vendor3
 payload=''
-for i in range(125):
+for i in range(123):
 	a=''.join(random.choices(string.digits + 'abcdef', k=2))
 	payload=payload+a
 payload=bytes.fromhex(payload)
@@ -153,7 +153,7 @@ dji_payload=b'Xb\x13\x10\x02M\x063\x1f0K1CG6G3AH8V2p\x00\x30\x30\xf0\x00\x00\x00
 # Vendor Specific: 26:37:12 (DJI)
 ie_vendor_dji = Dot11EltVendorSpecific(ID=221, len = len(dji_payload)+3 ,oui=0x263712, info = dji_payload)
 
-packet = RadioTap() / Dot11() / beacon_fields / ie_ssid / ie_rates / ie_ds / ie_tim / ie_country / ie_erp / ie_supprates / ie_htcap / ie_htinfo / ie_rsn /ie_vendor_dji 
+packet = RadioTap() / Dot11() / beacon_fields / ie_ssid / ie_rates / ie_ds / ie_tim / ie_country / ie_erp / ie_supprates / ie_htcap / ie_htinfo / ie_rsn /ie_vendor_dji/vendor1/vendor2/vendor3
 packet.subtype = frame_subtype
 packet.type = frame_type
 packet.addr1 = dest_addr
@@ -166,5 +166,5 @@ packet.show()
 sendp(packet,iface= iface, loop = 1, inter= 0.3)
 
 
-#Data shown by the Aeroscope are the one present in the Remote ID. It generates the largest entry in the flightLog file since raw data contains all the dji vendor specific data, moreover the uuid is present (this increases the size of each entry of the log file). Here, I put the uuid bytes of the vendor specific data equal to ascii characters as happens in normal scenarios. In this way the entry of the log files increases slower ~ 15 rows (in the flightLog file the uuid is printed in unicode that requires more space in terms of lines). From this script it is possible to state that the Aeroscope accepts as maximum 842 bytes and the last 54 bytes of the dji vendor are not parsed. See max_flightLog_entry.py for uuid in unicode (max length for the entry of the flightLog file)
+#Data shown by the Aeroscope are the one present in the Remote ID. It generates the largest entry in the flightLog file since raw data contains all the dji vendor specific data, moreover the uuid is present (this increases the size of each entry of the log file). Here, I put the uuid bytes of the vendor specific data equal to ascii characters as happens in normal scenarios. In this way the entry of the log files increases slower ~ 15 rows (in the flightLog file the uuid is printed in unicode that requires more space in terms of lines). From this script it is possible to state that the Aeroscope accepts as maximum 842 bytes and the last 54 bytes of the dji vendor are not parsed. See max_flightLog_entry.py for uuid in unicode (max length for the entry of the flightLog file). Vendor1, vendor2 and vendor3 are added at the end to make the max beacon frame that scapy can send (here 1478 bytes), but the Aeroscope discards them. 
 
