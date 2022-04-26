@@ -8,7 +8,6 @@ from Drone import *
 
 # think a smarter method to keep track of drones instead of using a list
 drones = []
-presence=False
 
 def parse_packet(payload):
     sernum = b''
@@ -42,8 +41,8 @@ def parse_packet(payload):
         print("info packet")
         info_payload = payload
         sernum = info_payload[4:20]
-        presence = False
         if drones:
+            presence = False
             for d in drones:
                 if d.sernum == sernum:
                     print("drone already present")
@@ -61,15 +60,13 @@ def parse_packet(payload):
             drone = Drone(sernum=sernum)
             drone.build_info(info_payload)
             drones.append(drone)
-            print(len(drones))
 
     for d in drones:
-
+        print(len(drones))
         d.show()
 
 
 def packet_handler(packet):
-    print(len(drones))
     if packet.haslayer(Dot11):
         dot11elt = packet.getlayer(Dot11EltVendorSpecific)
 
@@ -77,11 +74,11 @@ def packet_handler(packet):
             dot11elt = dot11elt.payload.getlayer(Dot11Elt)
         if dot11elt:
             payload = dot11elt.info
-            payload = payload[3:255] #to remove oui bytes
+            payload = payload[3:len(payload)] #to remove oui bytes
             parse_packet(payload)
 
 
-sniff(filter="ether src 60:60:1f:16:74:77", iface="wlx801f02f1e3d2", prn=packet_handler) #TODO make automatic the filter for the mac
+sniff(iface="wlx801f02f1e3d2", prn=packet_handler) #TODO make automatic the filter for the mac
 
 # data from max_djipayload
 # sernum=0K1CG6G3AH8V2M
