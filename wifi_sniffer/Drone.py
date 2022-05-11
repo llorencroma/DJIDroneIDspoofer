@@ -1,4 +1,5 @@
 import random, string
+import logging
 import sys
 from math import floor
 import time, os
@@ -8,7 +9,7 @@ import struct
 class Drone:
 
     def __init__(self, *args, **kwargs):
-
+        logging.basicConfig(format='%(asctime)s\n\t%(message)s', level=logging.INFO, filename='sniff_log.txt')
         self.sernum = kwargs['sernum'] if "sernum" in kwargs and len(kwargs["sernum"]) > 0 else b''
         self.lat = kwargs['lat'] if "lat" in kwargs and len(kwargs["lat"]) > 0 else b''
         self.long = kwargs['long'] if "long" in kwargs and len(kwargs["long"]) > 0 else b''
@@ -78,6 +79,27 @@ class Drone:
         self.flightinfo = flightinfo.decode()
 
     def show(self):
+
+        logging.info('Serial number: %s'
+                     '\n\tLatitude: %s'
+                     '\n\tLongitude: %s'
+                     '\n\tAircraft type: %s'
+                     '\n\tAltitude: %s'
+                     '\n\tHeight: %s'
+                     '\n\tVelocity north: %s'
+                     '\n\tVelocity east: %s'
+                     '\n\tVelocity up: %s'
+                     '\n\tYaw: %s'
+                     '\n\tRoll: %s'
+                     '\n\tPitch: %s'
+                     '\n\tPilot Latitude: %s'
+                     '\n\tPilot Longitude: %s'
+                     '\n\tHome Latitude: %s'
+                     '\n\tHome Longitude: %s'
+                     '\n\tUUID: %s'
+                     '\n\tIdentification: %s'
+                     '\n\tFlight information: %s',str(self.sernum),str(self.lat),str(self.long),str(self.type),str(self.altitude),str(self.height),str(self.v_north),str(self.v_east),str(self.v_up),str(self.yaw),str(self.roll),str(self.pitch),str(self.pilotlat),str(self.pilotlong),str(self.homelat),str(self.homelong),str(self.uuid),str(self.id),str(self.flightinfo))
+
         print("Serial Number: " + str(self.sernum))
         print("Latitude: " + str(self.lat))
         print("Longitude: " + str(self.long))
