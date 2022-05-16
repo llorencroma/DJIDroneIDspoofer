@@ -4,7 +4,8 @@ from scapy.layers.dot11 import Dot11EltVendorSpecific
 from Drone import *
 
 # TODO organize the display of info, don't show again if they don't change
-# TODO think how to capture drones from other manufacturer
+
+# There is a problem with the spoofer in the line "self.attribute2byte(self.uuid_len)", it adds an additional \x00 to uuid len so that it represents the first character of the UUID. For this reason the log does not work since it cannot print \x00 as a character
 
 # think a smarter method to keep track of drones instead of using a list
 drones = []
@@ -63,6 +64,8 @@ def parse_packet(payload):
 
     for d in drones:
         print(len(drones))
+        d.log()
+        d.add_db()
         d.show()
 
 
