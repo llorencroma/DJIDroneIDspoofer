@@ -187,6 +187,7 @@ class Drone:
                         d['flight_info'] = self.flightinfo
                         json_obj=json.dumps(drones, indent=4,default=str)
                         file = open("db_drones.json", "w")
+                        print("add drone")
                         file.write(json_obj)
                         file.close()
             if not presence:
@@ -216,6 +217,7 @@ class Drone:
                 drones.append(new_drone)
                 json_obj = json.dumps(drones, indent=4,default=str)
                 file = open("db_drones.json", "w")
+                print("add drone")
                 file.write(json_obj)
                 file.close()
         else:
@@ -246,5 +248,6 @@ class Drone:
             ]
             json_obj = json.dumps(drones, indent=4,default=str)
             file = open("db_drones.json", "w")
+            print("add drone")
             file.write(json_obj)
             file.close()
