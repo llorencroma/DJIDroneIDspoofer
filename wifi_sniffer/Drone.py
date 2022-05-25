@@ -5,7 +5,7 @@ import datetime
 import struct
 
 
-def checkFileExist(name):
+def check_file_exist(name):
     try:
         with open(name, 'r') as f:
             print('true')
@@ -138,7 +138,7 @@ class Drone:
 
     def add_db(self):
         presence = False
-        if checkFileExist('db_drones.json'):
+        if check_file_exist('db_drones.json'):
             file = open("db_drones.json", "r")
             content = file.read()
             drones = json.loads(content)
