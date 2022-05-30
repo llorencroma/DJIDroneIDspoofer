@@ -156,6 +156,7 @@ def update_data():
                                         if str(iid) == str(d1.sernum):
                                             item_to_update = table.item(item)
                                             table.item(item_to_update, values=data)
+
             else:
                 for d in drones:
                     drones_in_table.append(d)

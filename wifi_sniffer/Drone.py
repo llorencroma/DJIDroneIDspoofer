@@ -183,6 +183,7 @@ class Drone:
                         d['pilot_longitude'] = self.pilotlong
                         d['home_latitude'] = self.homelat
                         d['home_longitude'] = self.homelong
+                        d['uuid']=self.uuid
                         d['identification'] = self.id
                         d['flight_info'] = self.flightinfo
                         json_obj=json.dumps(drones, indent=4,default=str)
