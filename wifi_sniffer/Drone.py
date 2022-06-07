@@ -3,25 +3,25 @@ import sys
 import json
 import datetime
 import struct
+import time
 
-
+# Function to check if a file exists
 def check_file_exist(name):
     try:
         with open(name, 'r') as f:
-            print('true')
             return True
     except FileNotFoundError as e:
-        print('false')
         return False
     except IOError as e:
-        print('false')
         return False
 
 
 class Drone:
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
+        # To add logging features
         logging.basicConfig(format='%(asctime)s\n\t%(message)s', level=logging.INFO, filename='sniff_log.txt')
+
         self.sernum = kwargs['sernum'] if "sernum" in kwargs and len(kwargs["sernum"]) > 0 else b''
         self.lat = kwargs['lat'] if "lat" in kwargs and len(kwargs["lat"]) > 0 else b''
         self.long = kwargs['long'] if "long" in kwargs and len(kwargs["long"]) > 0 else b''
@@ -41,6 +41,7 @@ class Drone:
         self.uuid = kwargs['uuid'] if "uuid" in kwargs and len(kwargs["uuid"]) > 0 else b''
         self.id = kwargs['id'] if "id" in kwargs and len(kwargs["id"]) > 0 else b''
         self.flightinfo = kwargs['flightinfo'] if "flightinfo" in kwargs and len(kwargs["flightinfo"]) > 0 else b''
+        self.start_time=time.time() # To keep track of the time of the last packet received
 
     def build_telemetry(self, payload):
         long = payload[25:29]
@@ -61,7 +62,7 @@ class Drone:
         uuidlen = payload[70:71]
         uuid = payload[71:71 + int.from_bytes(uuidlen, byteorder=sys.byteorder)]
 
-        # fill the other fields of the drone
+        # Fill the other fields of the drone
         self.lat = float('.'.join(str(elem) for elem in (struct.unpack('<i', lat)))) / 174533.0
         self.long = float('.'.join(str(elem) for elem in (struct.unpack('<i', long)))) / 174533.0
         self.altitude = float('.'.join(str(elem) for elem in (struct.unpack(''.join(['<', 'H']), altitude))))
@@ -76,21 +77,21 @@ class Drone:
         self.pilotlong = float('.'.join(str(elem) for elem in (struct.unpack('<i', pilotlong)))) / 174533.0
         self.homelong = float('.'.join(str(elem) for elem in (struct.unpack('<i', homelong)))) / 174533.0
         self.homelat = float('.'.join(str(elem) for elem in (struct.unpack('<i', homelat)))) / 174533.0
-        self.type = type  # TODO think to an enum in which there are the association between the hex bytes and the aircraft type
+        self.type = type  # TODO think to an enum to identify drone's type
         self.uuid = uuid.decode()
 
     def build_info(self, payload):
-        # if it is a n info payload
         idlen = payload[20:21]
         id = payload[21:21 + int.from_bytes(idlen, byteorder=sys.byteorder)]
         flightinfolen = payload[31:32]
         flightinfo = payload[32:32 + int.from_bytes(flightinfolen, byteorder=sys.byteorder)]
 
-        # fill the other fields of the drone
+        # Fill the other fields of the drone
         self.id = id.decode()
         self.flightinfo = flightinfo.decode()
 
     def show(self):
+        # Print drone's data in the console
         print("Serial Number: " + str(self.sernum))
         print("Latitude: " + str(self.lat))
         print("Longitude: " + str(self.long))
@@ -112,7 +113,9 @@ class Drone:
         print("Flight Information: " + str(self.flightinfo))
         print('\n\n')
 
-    def log(self):  # to add uuid
+    def log(self):
+        # Logging all the detected drones with the related information
+        # To add uuid
         logging.info('Serial number: %s'
                      '\n\tLatitude: %s'
                      '\n\tLongitude: %s'
@@ -137,6 +140,7 @@ class Drone:
                      str(self.homelat), str(self.homelong), str(self.id), str(self.flightinfo))
 
     def add_db(self):
+        # Save detected drones in a json file as a db
         presence = False
         if check_file_exist('db_drones.json'):
             file = open("db_drones.json", "r")
@@ -144,7 +148,7 @@ class Drone:
             drones = json.loads(content)
             file.close()
             for d in drones:
-                #get some parameters used later
+                # Get some parameters used later
                 sn = d['sn']
                 lat = d['latitude']
                 long = d['longitude']
@@ -163,11 +167,18 @@ class Drone:
                 id = d['identification']
                 flight_info = d['flight_info']
                 if str(sn) == str(self.sernum):
-                    print("drone already present check parameters")
+                    # Drone already present
                     presence = True
-                    #if some of the dynamic parameters change update the data, add also id and flight info since the packet coould arrive later losing the info
-                    if str(lat) != str(self.lat) or str(long) != str(self.long) or str(long) != str(self.long) or str(alt) != str(self.altitude) or str(height) != str(self.height) or str(v_north) != str(self.v_north) or str(v_east) != str(self.v_east) or str(v_up) != str(self.v_up) or str(yaw) != str(self.yaw) or str(roll) != str(self.roll) or str(pitch) != str(self.pitch) or str(pilot_lat) != str(self.pilotlat) or str(pilot_long) != str(self.pilotlong) or str(home_lat) != str(self.homelat) or str(home_long) != str(self.homelong) or str(id) != str(self.id) or str(flight_info) != str(self.flightinfo):
-                        print("update data")
+                    # Check if some of the dynamic parameters change. If yes, update the data
+                    # Also update id and flight info since the info packet could arrive later
+                    if str(lat) != str(self.lat) or str(long) != str(self.long) or str(long) != str(self.long) or str(
+                            alt) != str(self.altitude) or str(height) != str(self.height) or str(v_north) != str(
+                        self.v_north) or str(v_east) != str(self.v_east) or str(v_up) != str(self.v_up) or str(
+                        yaw) != str(self.yaw) or str(roll) != str(self.roll) or str(pitch) != str(
+                        self.pitch) or str(pilot_lat) != str(self.pilotlat) or str(pilot_long) != str(
+                        self.pilotlong) or str(home_lat) != str(self.homelat) or str(home_long) != str(
+                        self.homelong) or str(id) != str(self.id) or str(flight_info) != str(self.flightinfo):
+                        # Update data
                         d['timestamp'] = datetime.datetime.now()
                         d['latitude'] = self.lat
                         d['longitude'] = self.long
@@ -183,16 +194,15 @@ class Drone:
                         d['pilot_longitude'] = self.pilotlong
                         d['home_latitude'] = self.homelat
                         d['home_longitude'] = self.homelong
-                        d['uuid']=self.uuid
+                        d['uuid'] = self.uuid
                         d['identification'] = self.id
                         d['flight_info'] = self.flightinfo
-                        json_obj=json.dumps(drones, indent=4,default=str)
+                        json_obj = json.dumps(drones, indent=4, default=str)
                         file = open("db_drones.json", "w")
-                        print("add drone")
                         file.write(json_obj)
                         file.close()
             if not presence:
-                print("add new drone")
+                # New drone
                 new_drone = {
                     "timestamp": str(datetime.datetime.now()),
                     "sn": str(self.sernum),
@@ -216,13 +226,12 @@ class Drone:
                     "flight_info": str(self.flightinfo)
                 }
                 drones.append(new_drone)
-                json_obj = json.dumps(drones, indent=4,default=str)
+                json_obj = json.dumps(drones, indent=4, default=str)
                 file = open("db_drones.json", "w")
-                print("add drone")
                 file.write(json_obj)
                 file.close()
         else:
-            print("create file")
+            # Create json file if it does not exist
             drones = [
                 {
                     "timestamp": str(datetime.datetime.now()),
@@ -247,8 +256,7 @@ class Drone:
                     "flight_info": str(self.flightinfo)
                 }
             ]
-            json_obj = json.dumps(drones, indent=4,default=str)
+            json_obj = json.dumps(drones, indent=4, default=str)
             file = open("db_drones.json", "w")
-            print("add drone")
             file.write(json_obj)
             file.close()
