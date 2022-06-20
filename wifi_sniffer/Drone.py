@@ -139,11 +139,11 @@ class Drone:
                      str(self.yaw), str(self.roll), str(self.pitch), str(self.pilotlat), str(self.pilotlong),
                      str(self.homelat), str(self.homelong), str(self.id), str(self.flightinfo))
 
-    def add_db(self):
+    def add_db_last_update(self):
         # Save detected drones in a json file as a db
         presence = False
-        if check_file_exist('db_drones.json'):
-            file = open("db_drones.json", "r")
+        if check_file_exist('db_drones_update.json'):
+            file = open("db_drones_update.json", "r")
             content = file.read()
             drones = json.loads(content)
             file.close()
@@ -198,7 +198,7 @@ class Drone:
                         d['identification'] = self.id
                         d['flight_info'] = self.flightinfo
                         json_obj = json.dumps(drones, indent=4, default=str)
-                        file = open("db_drones.json", "w")
+                        file = open("db_drones_update.json", "w")
                         file.write(json_obj)
                         file.close()
             if not presence:
@@ -227,9 +227,74 @@ class Drone:
                 }
                 drones.append(new_drone)
                 json_obj = json.dumps(drones, indent=4, default=str)
-                file = open("db_drones.json", "w")
+                file = open("db_drones_update.json", "w")
                 file.write(json_obj)
                 file.close()
+        else:
+            # Create json file if it does not exist
+            drones = [
+                {
+                    "timestamp": str(datetime.datetime.now()),
+                    "sn": str(self.sernum),
+                    "latitude": str(self.lat),
+                    "longitude": str(self.long),
+                    "aircraft_type": str(self.type),
+                    "altitude": str(self.altitude),
+                    "height": str(self.height),
+                    "v_north": str(self.v_north),
+                    "v_east": str(self.v_east),
+                    "v_up": str(self.v_up),
+                    "yaw": str(self.yaw),
+                    "roll": str(self.roll),
+                    "pitch": str(self.pitch),
+                    "pilot_latitude": str(self.pilotlat),
+                    "pilot_longitude": str(self.pilotlong),
+                    "home_latitude": str(self.homelat),
+                    "home_longitude": str(self.homelong),
+                    "uuid": str(self.uuid),
+                    "identification": str(self.id),
+                    "flight_info": str(self.flightinfo)
+                }
+            ]
+            json_obj = json.dumps(drones, indent=4, default=str)
+            file = open("db_drones_update.json", "w")
+            file.write(json_obj)
+            file.close()
+
+    def add_db(self):
+        # Save detected drones in a json file as a db
+        if check_file_exist('db_drones.json'):
+            file = open("db_drones.json", "r")
+            content = file.read()
+            drones = json.loads(content)
+            file.close()
+            new_drone = {
+                "timestamp": str(datetime.datetime.now()),
+                "sn": str(self.sernum),
+                "latitude": str(self.lat),
+                "longitude": str(self.long),
+                "aircraft_type": str(self.type),
+                "altitude": str(self.altitude),
+                "height": str(self.height),
+                "v_north": str(self.v_north),
+                "v_east": str(self.v_east),
+                "v_up": str(self.v_up),
+                "yaw": str(self.yaw),
+                "roll": str(self.roll),
+                "pitch": str(self.pitch),
+                "pilot_latitude": str(self.pilotlat),
+                "pilot_longitude": str(self.pilotlong),
+                "home_latitude": str(self.homelat),
+                "home_longitude": str(self.homelong),
+                "uuid": str(self.uuid),
+                "identification": str(self.id),
+                "flight_info": str(self.flightinfo)
+            }
+            drones.append(new_drone)
+            json_obj = json.dumps(drones, indent=4, default=str)
+            file = open("db_drones.json", "w")
+            file.write(json_obj)
+            file.close()
         else:
             # Create json file if it does not exist
             drones = [

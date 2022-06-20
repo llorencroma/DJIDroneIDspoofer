@@ -10,7 +10,6 @@ from Drone import *
 # This is due to the elapsed time lost in the execution of the code
 TIMER = 30
 
-
 # In the spoofer the line "self.attribute2byte(self.uuid_len)" adds '\x00' to uuid len so that it represents the first
 # character of the UUID. For this reason the log does not work since it cannot print '\x00' as a character
 def parse_packet(payload):
@@ -79,11 +78,11 @@ def parse_packet(payload):
     for d in drones:
         print("Drones detected: " + str(len(drones)))
         d.log()  # Logging
-        d.add_db()  # Save detected drones in a json file as db
+        d.add_db_last_update()  # Save last detected drones data in a json file as db
+        d.add_db() # Save all the all detected drones data in a json file as db
         # Check timer: if no packets received within 30 sec the drone is removed and not showed in the console
         if (time.time() - d.start_time) < TIMER:
             a=time.time() - d.start_time;
-            print(a)
             d.show()  # Print drone's information in the console
         else:
             # Timer elapsed
@@ -108,7 +107,7 @@ def build_gui():
     frame = Frame(ws)
     frame.pack()
 
-    # scrollbar
+    # Scrollbar
     scroll = Scrollbar(frame)
     scroll.pack(side=RIGHT, fill=Y)
     scroll = Scrollbar(frame, orient='horizontal')
