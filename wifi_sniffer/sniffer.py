@@ -4,7 +4,10 @@ from tkinter import *
 from tkinter import ttk
 from scapy.all import Dot11, Dot11Elt, sniff
 from scapy.layers.dot11 import Dot11EltVendorSpecific
+from tkintermapview import map_widget
+
 from Drone import *
+from App import *
 
 # Due to limitations in how the sniffer is implemented, small timer leads to lose drones even if packets are received
 # This is due to the elapsed time lost in the execution of the code
@@ -37,6 +40,7 @@ def parse_packet(payload):
                 drone.start_time = time.time()
                 drone.build_telemetry(telemetry_payload)
                 drones.append(drone)
+                app.save_marker(app.map_widget.set_position(drone.lat,drone.long, marker=True))
         else:
             # New drone
             drone = Drone(sernum=sernum)
@@ -44,6 +48,7 @@ def parse_packet(payload):
             drone.start_time = time.time()
             drone.build_telemetry(telemetry_payload)
             drones.append(drone)
+            app.save_marker(app.map_widget.set_position(drone.lat, drone.long, marker=True))
 
     else:
         # It is a flight info payload
@@ -66,6 +71,7 @@ def parse_packet(payload):
                 drone.start_time = time.time()
                 drone.build_info(info_payload)
                 drones.append(drone)
+                app.save_marker(app.map_widget.set_position(drone.lat, drone.long, marker=True))
 
         else:
             # New drone
@@ -74,6 +80,7 @@ def parse_packet(payload):
             drone.start_time = time.time()
             drone.build_info(info_payload)
             drones.append(drone)
+            app.save_marker(app.map_widget.set_position(drone.lat, drone.long, marker=True))
 
     for d in drones:
         print("Drones detected: " + str(len(drones)))
@@ -87,6 +94,9 @@ def parse_packet(payload):
         else:
             # Timer elapsed
             drones.remove(d)
+            app.clear_marker_list()
+            for d in drones:
+                app.save_marker(app.map_widget.set_position(d.lat, d.long, marker=True))
 
 
 def packet_handler(packet):
@@ -184,6 +194,7 @@ def sniff_work(iface):
 if __name__ == '__main__':
     # List to keep track of detected drones
     drones = []
+    app = App()
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--interface", help="Sniff through the interface")
     args = parser.parse_args()
@@ -196,4 +207,9 @@ if __name__ == '__main__':
         # Start the two threads: sniffer and the GUI
         sniff_thread = threading.Thread(target=sniff_work, args=(interface,))
         sniff_thread.start()
-        build_gui()
+        gui_thread = threading.Thread(target=build_gui, )
+        gui_thread.start()
+        app.start()
+
+
+
