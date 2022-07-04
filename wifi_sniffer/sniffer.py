@@ -4,8 +4,6 @@ from tkinter import *
 from tkinter import ttk
 from scapy.all import Dot11, Dot11Elt, sniff
 from scapy.layers.dot11 import Dot11EltVendorSpecific
-from tkintermapview import map_widget
-
 from Drone import *
 from App import *
 
@@ -40,6 +38,7 @@ def parse_packet(payload):
                 drone.start_time = time.time()
                 drone.build_telemetry(telemetry_payload)
                 drones.append(drone)
+                # Add marker in the map for the drone detected
                 app.save_marker(app.map_widget.set_position(drone.lat,drone.long, marker=True))
         else:
             # New drone
@@ -48,6 +47,7 @@ def parse_packet(payload):
             drone.start_time = time.time()
             drone.build_telemetry(telemetry_payload)
             drones.append(drone)
+            # Add marker in the map for the drone detected
             app.save_marker(app.map_widget.set_position(drone.lat, drone.long, marker=True))
 
     else:
@@ -71,6 +71,7 @@ def parse_packet(payload):
                 drone.start_time = time.time()
                 drone.build_info(info_payload)
                 drones.append(drone)
+                # Add marker in the map for the drone detected
                 app.save_marker(app.map_widget.set_position(drone.lat, drone.long, marker=True))
 
         else:
@@ -80,6 +81,7 @@ def parse_packet(payload):
             drone.start_time = time.time()
             drone.build_info(info_payload)
             drones.append(drone)
+            # Add marker in the map for the drone detected
             app.save_marker(app.map_widget.set_position(drone.lat, drone.long, marker=True))
 
     for d in drones:
@@ -89,13 +91,13 @@ def parse_packet(payload):
         d.add_db() # Save all the all detected drones data in a json file as db
         # Check timer: if no packets received within 30 sec the drone is removed and not showed in the console
         if (time.time() - d.start_time) < TIMER:
-            a=time.time() - d.start_time;
             d.show()  # Print drone's information in the console
         else:
             # Timer elapsed
             drones.remove(d)
             app.clear_marker_list()
             for d in drones:
+                # Add marker in the map for the drone detected
                 app.save_marker(app.map_widget.set_position(d.lat, d.long, marker=True))
 
 
@@ -111,6 +113,7 @@ def packet_handler(packet):
             parse_packet(payload)  # Parse the vendor dji payload
 
 
+# Build table with real-time drone information
 def build_gui():
     ws = Tk()
     ws.title('Drones')
@@ -194,7 +197,7 @@ def sniff_work(iface):
 if __name__ == '__main__':
     # List to keep track of detected drones
     drones = []
-    app = App()
+    app = App() # Map Thread
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--interface", help="Sniff through the interface")
     args = parser.parse_args()
@@ -204,7 +207,7 @@ if __name__ == '__main__':
         raise SystemExit("  Usage: {sys.argv[0]} -i  <interface> \n  Interface must be in monitor mode")
     else:
         interface = args.interface
-        # Start the two threads: sniffer and the GUI
+        # Start the three threads: sniffer, the Table and the Map
         sniff_thread = threading.Thread(target=sniff_work, args=(interface,))
         sniff_thread.start()
         gui_thread = threading.Thread(target=build_gui, )

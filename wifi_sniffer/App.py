@@ -7,8 +7,8 @@ from tkintermapview import TkinterMapView
 class App(tkinter.Tk):
 
     APP_NAME = "DJI sniffer"
-    WIDTH = 1000
-    HEIGHT = 750
+    WIDTH = 1500
+    HEIGHT = 700
 
     def __init__(self, *args, **kwargs):
         tkinter.Tk.__init__(self, *args, **kwargs)
@@ -23,15 +23,18 @@ class App(tkinter.Tk):
             self.bind("<Command-q>", self.on_closing)
             self.bind("<Command-w>", self.on_closing)
 
-        self.map_widget = TkinterMapView(width=self.WIDTH, height=600, corner_radius=0)
+        # Set the map
+        self.map_widget = TkinterMapView(width=self.WIDTH, height=self.HEIGHT, corner_radius=0)
         self.map_widget.grid(row=1, column=0, columnspan=3, sticky="nsew")
 
+        # List of the markers (drones)
         self.marker_list = []
-        self.marker_path = None
 
+    # Add a new marker (drone)
     def save_marker(self,marker):
         self.marker_list.append(marker)
 
+    # Clear the marker list
     def clear_marker_list(self):
         for m in self.marker_list:
             m.delete()
@@ -41,5 +44,6 @@ class App(tkinter.Tk):
         self.destroy()
         exit()
 
+    # To display the map
     def start(self):
         self.mainloop()
