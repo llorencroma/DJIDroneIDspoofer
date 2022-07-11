@@ -61,7 +61,7 @@ This work is a first version of a DJI Remote ID Sniffer, but more functionalitie
 
 # References
 [FAA rule](https://www.faa.gov/uas/getting_started/remote_id)\
-[EU rules](https://eur-lex.europa.eu/eli/reg_del/2019/945/2020-08-09) and [EU rules](https://eur-lex.europa.eu/eli/reg_impl/2019/947/2021-08-05)\
+[EU rules 945/2019](https://eur-lex.europa.eu/eli/reg_del/2019/945/2020-08-09) and [EU rules 947/2019](https://eur-lex.europa.eu/eli/reg_impl/2019/947/2021-08-05)\
 [ASTM standard](https://www.astm.org/f3411-22.html)\
 [ASD-STAN standard](https://asd-stan.org/wp-content/uploads/ASD-STAN_DRI_Introduction_to_the_European_digital_RID_UAS_Standard.pdf)\
 [Scapy](https://scapy.net/)\
