@@ -1,5 +1,6 @@
 import argparse
 import threading
+import time
 from tkinter import *
 from tkinter import ttk
 from scapy.all import Dot11, Dot11Elt, sniff
@@ -10,6 +11,7 @@ from App import *
 # Due to limitations in how the sniffer is implemented, small timer leads to lose drones even if packets are received
 # This is due to the elapsed time lost in the execution of the code
 TIMER = 30
+
 
 # In the spoofer the line "self.attribute2byte(self.uuid_len)" adds '\x00' to uuid len so that it represents the first
 # character of the UUID. For this reason the log does not work since it cannot print '\x00' as a character
@@ -39,7 +41,7 @@ def parse_packet(payload):
                 drone.build_telemetry(telemetry_payload)
                 drones.append(drone)
                 # Add marker in the map for the drone detected
-                app.save_marker(app.map_widget.set_position(drone.lat,drone.long, marker=True))
+                app.save_marker(app.map_widget.set_position(drone.lat, drone.long, marker=True))
         else:
             # New drone
             drone = Drone(sernum=sernum)
@@ -49,7 +51,6 @@ def parse_packet(payload):
             drones.append(drone)
             # Add marker in the map for the drone detected
             app.save_marker(app.map_widget.set_position(drone.lat, drone.long, marker=True))
-
     else:
         # It is a flight info payload
         info_payload = payload
@@ -87,8 +88,8 @@ def parse_packet(payload):
     for d in drones:
         print("Drones detected: " + str(len(drones)))
         d.log()  # Logging
-        d.add_db_last_update()  # Save last detected drones data in a json file as db
-        d.add_db() # Save all the all detected drones data in a json file as db
+        d.db()  # Save data in a json file
+
         # Check timer: if no packets received within 30 sec the drone is removed and not showed in the console
         if (time.time() - d.start_time) < TIMER:
             d.show()  # Print drone's information in the console
@@ -114,7 +115,7 @@ def packet_handler(packet):
 
 
 # Build table with real-time drone information
-def build_gui():
+def build_table():
     ws = Tk()
     ws.title('Drones')
     frame = Frame(ws)
@@ -197,7 +198,7 @@ def sniff_work(iface):
 if __name__ == '__main__':
     # List to keep track of detected drones
     drones = []
-    app = App() # Map Thread
+    app = App()  # Map Thread
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--interface", help="Sniff through the interface")
     args = parser.parse_args()
@@ -210,9 +211,6 @@ if __name__ == '__main__':
         # Start the three threads: sniffer, the Table and the Map
         sniff_thread = threading.Thread(target=sniff_work, args=(interface,))
         sniff_thread.start()
-        gui_thread = threading.Thread(target=build_gui, )
+        gui_thread = threading.Thread(target=build_table, )
         gui_thread.start()
         app.start()
-
-
-

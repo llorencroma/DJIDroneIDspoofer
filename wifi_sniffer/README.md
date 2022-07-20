@@ -14,7 +14,7 @@ The current implementation offers several functionalities:
   * TABLE showing drones information updated in real-time
   * MAP showing drones detected with a marker without tracking the path
   * LOG file created while the application is running. It contains all the detections along with the related timestamps
-  * JSON file created while the application is running. Two JSON files are generated: one only stores the drones detected with last location and the other stores all the detections (both with the related timestamps)
+  * JSON file created while the application is running. It stores the drones detected and for each drone all the detections with the related timestamps.
   * TIMER (configurable) maintained for each drone detected to allow the application to stop detecting a drone if no more DJI Remote IDs are received from that drone
 
 ## Limitations / Bugs

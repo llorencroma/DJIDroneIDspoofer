@@ -5,6 +5,7 @@ import datetime
 import struct
 import time
 
+
 # Function to check if a file exists
 def check_file_exist(name):
     try:
@@ -41,7 +42,7 @@ class Drone:
         self.uuid = kwargs['uuid'] if "uuid" in kwargs and len(kwargs["uuid"]) > 0 else b''
         self.id = kwargs['id'] if "id" in kwargs and len(kwargs["id"]) > 0 else b''
         self.flightinfo = kwargs['flightinfo'] if "flightinfo" in kwargs and len(kwargs["flightinfo"]) > 0 else b''
-        self.start_time=time.time() # To keep track of the time of the last packet received
+        self.start_time = time.time()  # To keep track of the time of the last packet received
 
     def build_telemetry(self, payload):
         long = payload[25:29]
@@ -139,189 +140,107 @@ class Drone:
                      str(self.yaw), str(self.roll), str(self.pitch), str(self.pilotlat), str(self.pilotlong),
                      str(self.homelat), str(self.homelong), str(self.id), str(self.flightinfo))
 
-    def add_db_last_update(self):
-        # Save detected drones in a json file as a db
+    def db(self):
+        drone_counter = 0
+        position_counter = 0
         presence = False
-        if check_file_exist('db_drones_update.json'):
-            file = open("db_drones_update.json", "r")
-            content = file.read()
-            drones = json.loads(content)
-            file.close()
+        # Save detected drones in a json file as a db
+        if check_file_exist('db.json'):
+            file = open("db.json", "r")
+            data = json.load(file)
+            drones = data['drones']
             for d in drones:
-                # Get some parameters used later
-                sn = d['sn']
-                lat = d['latitude']
-                long = d['longitude']
-                alt = d['altitude']
-                height = d['height']
-                v_north = d['v_north']
-                v_east = d['v_east']
-                v_up = d['v_up']
-                yaw = d['yaw']
-                roll = d['roll']
-                pitch = d['pitch']
-                pilot_lat = d['pilot_latitude']
-                pilot_long = d['pilot_longitude']
-                home_lat = d['home_latitude']
-                home_long = d['home_longitude']
-                id = d['identification']
-                flight_info = d['flight_info']
-                if str(sn) == str(self.sernum):
+                if str(d['sn']) == str(self.sernum):
                     # Drone already present
                     presence = True
-                    # Check if some of the dynamic parameters change. If yes, update the data
-                    # Also update id and flight info since the info packet could arrive later
-                    if str(lat) != str(self.lat) or str(long) != str(self.long) or str(long) != str(self.long) or str(
-                            alt) != str(self.altitude) or str(height) != str(self.height) or str(v_north) != str(
-                        self.v_north) or str(v_east) != str(self.v_east) or str(v_up) != str(self.v_up) or str(
-                        yaw) != str(self.yaw) or str(roll) != str(self.roll) or str(pitch) != str(
-                        self.pitch) or str(pilot_lat) != str(self.pilotlat) or str(pilot_long) != str(
-                        self.pilotlong) or str(home_lat) != str(self.homelat) or str(home_long) != str(
-                        self.homelong) or str(id) != str(self.id) or str(flight_info) != str(self.flightinfo):
-                        # Update data
-                        d['timestamp'] = datetime.datetime.now()
-                        d['latitude'] = self.lat
-                        d['longitude'] = self.long
-                        d['altitude'] = self.altitude
-                        d['height'] = self.height
-                        d['v_north'] = self.v_north
-                        d['v_east'] = self.v_east
-                        d['v_up'] = self.v_up
-                        d['yaw'] = self.yaw
-                        d['roll'] = self.roll
-                        d['pitch'] = self.pitch
-                        d['pilot_latitude'] = self.pilotlat
-                        d['pilot_longitude'] = self.pilotlong
-                        d['home_latitude'] = self.homelat
-                        d['home_longitude'] = self.homelong
-                        d['uuid'] = self.uuid
-                        d['identification'] = self.id
-                        d['flight_info'] = self.flightinfo
-                        json_obj = json.dumps(drones, indent=4, default=str)
-                        file = open("db_drones_update.json", "w")
-                        file.write(json_obj)
-                        file.close()
+                    # Add object position with incremental id
+                    positions = d['positions']
+                    position_counter = len(positions) + 1
+                    detection = {
+                        "id": position_counter,
+                        "timestamp": str(datetime.datetime.now()),
+                        "latitude": str(self.lat),
+                        "longitude": str(self.long),
+                        "altitude": str(self.altitude),
+                        "height": str(self.height),
+                        "v_north": str(self.v_north),
+                        "v_east": str(self.v_east),
+                        "v_up": str(self.v_up),
+                        "yaw": str(self.yaw),
+                        "roll": str(self.roll),
+                        "pitch": str(self.pitch),
+                        "pilot_latitude": str(self.pilotlat),
+                        "pilot_longitude": str(self.pilotlong),
+                        "home_latitude": str(self.homelat),
+                        "home_longitude": str(self.homelong),
+                    }
+
+                    d['positions'].append(detection)
+                    with open('db.json', 'w') as f:
+                        json.dump(data, f, indent=4)
+
             if not presence:
                 # New drone
+                drone_counter = drone_counter + 1
                 new_drone = {
-                    "timestamp": str(datetime.datetime.now()),
                     "sn": str(self.sernum),
-                    "latitude": str(self.lat),
-                    "longitude": str(self.long),
                     "aircraft_type": str(self.type),
-                    "altitude": str(self.altitude),
-                    "height": str(self.height),
-                    "v_north": str(self.v_north),
-                    "v_east": str(self.v_east),
-                    "v_up": str(self.v_up),
-                    "yaw": str(self.yaw),
-                    "roll": str(self.roll),
-                    "pitch": str(self.pitch),
-                    "pilot_latitude": str(self.pilotlat),
-                    "pilot_longitude": str(self.pilotlong),
-                    "home_latitude": str(self.homelat),
-                    "home_longitude": str(self.homelong),
                     "uuid": str(self.uuid),
                     "identification": str(self.id),
-                    "flight_info": str(self.flightinfo)
+                    "flight_info": str(self.flightinfo),
+                    "positions": [
+                        {
+                            "id": drone_counter,
+                            "timestamp": str(datetime.datetime.now()),
+                            "latitude": str(self.lat),
+                            "longitude": str(self.long),
+                            "altitude": str(self.altitude),
+                            "height": str(self.height),
+                            "v_north": str(self.v_north),
+                            "v_east": str(self.v_east),
+                            "v_up": str(self.v_up),
+                            "yaw": str(self.yaw),
+                            "roll": str(self.roll),
+                            "pitch": str(self.pitch),
+                            "pilot_latitude": str(self.pilotlat),
+                            "pilot_longitude": str(self.pilotlong),
+                            "home_latitude": str(self.homelat),
+                            "home_longitude": str(self.homelong),
+                        }
+                    ]
                 }
-                drones.append(new_drone)
-                json_obj = json.dumps(drones, indent=4, default=str)
-                file = open("db_drones_update.json", "w")
-                file.write(json_obj)
-                file.close()
+                data['drones'].append(new_drone)
+                with open('db.json', 'w') as f:
+                    json.dump(data, f, indent=4)
         else:
             # Create json file if it does not exist
-            drones = [
-                {
-                    "timestamp": str(datetime.datetime.now()),
-                    "sn": str(self.sernum),
-                    "latitude": str(self.lat),
-                    "longitude": str(self.long),
-                    "aircraft_type": str(self.type),
-                    "altitude": str(self.altitude),
-                    "height": str(self.height),
-                    "v_north": str(self.v_north),
-                    "v_east": str(self.v_east),
-                    "v_up": str(self.v_up),
-                    "yaw": str(self.yaw),
-                    "roll": str(self.roll),
-                    "pitch": str(self.pitch),
-                    "pilot_latitude": str(self.pilotlat),
-                    "pilot_longitude": str(self.pilotlong),
-                    "home_latitude": str(self.homelat),
-                    "home_longitude": str(self.homelong),
-                    "uuid": str(self.uuid),
-                    "identification": str(self.id),
-                    "flight_info": str(self.flightinfo)
-                }
-            ]
-            json_obj = json.dumps(drones, indent=4, default=str)
-            file = open("db_drones_update.json", "w")
-            file.write(json_obj)
-            file.close()
-
-    def add_db(self):
-        # Save detected drones in a json file as a db
-        if check_file_exist('db_drones.json'):
-            file = open("db_drones.json", "r")
-            content = file.read()
-            drones = json.loads(content)
-            file.close()
-            new_drone = {
-                "timestamp": str(datetime.datetime.now()),
+            drone_counter = drone_counter + 1
+            drones = {"drones": [{
                 "sn": str(self.sernum),
-                "latitude": str(self.lat),
-                "longitude": str(self.long),
                 "aircraft_type": str(self.type),
-                "altitude": str(self.altitude),
-                "height": str(self.height),
-                "v_north": str(self.v_north),
-                "v_east": str(self.v_east),
-                "v_up": str(self.v_up),
-                "yaw": str(self.yaw),
-                "roll": str(self.roll),
-                "pitch": str(self.pitch),
-                "pilot_latitude": str(self.pilotlat),
-                "pilot_longitude": str(self.pilotlong),
-                "home_latitude": str(self.homelat),
-                "home_longitude": str(self.homelong),
                 "uuid": str(self.uuid),
                 "identification": str(self.id),
-                "flight_info": str(self.flightinfo)
-            }
-            drones.append(new_drone)
-            json_obj = json.dumps(drones, indent=4, default=str)
-            file = open("db_drones.json", "w")
-            file.write(json_obj)
-            file.close()
-        else:
-            # Create json file if it does not exist
-            drones = [
-                {
-                    "timestamp": str(datetime.datetime.now()),
-                    "sn": str(self.sernum),
-                    "latitude": str(self.lat),
-                    "longitude": str(self.long),
-                    "aircraft_type": str(self.type),
-                    "altitude": str(self.altitude),
-                    "height": str(self.height),
-                    "v_north": str(self.v_north),
-                    "v_east": str(self.v_east),
-                    "v_up": str(self.v_up),
-                    "yaw": str(self.yaw),
-                    "roll": str(self.roll),
-                    "pitch": str(self.pitch),
-                    "pilot_latitude": str(self.pilotlat),
-                    "pilot_longitude": str(self.pilotlong),
-                    "home_latitude": str(self.homelat),
-                    "home_longitude": str(self.homelong),
-                    "uuid": str(self.uuid),
-                    "identification": str(self.id),
-                    "flight_info": str(self.flightinfo)
-                }
-            ]
-            json_obj = json.dumps(drones, indent=4, default=str)
-            file = open("db_drones.json", "w")
-            file.write(json_obj)
-            file.close()
+                "flight_info": str(self.flightinfo),
+                "positions": [
+                    {
+                        "id": drone_counter,
+                        "timestamp": str(datetime.datetime.now()),
+                        "latitude": str(self.lat),
+                        "longitude": str(self.long),
+                        "altitude": str(self.altitude),
+                        "height": str(self.height),
+                        "v_north": str(self.v_north),
+                        "v_east": str(self.v_east),
+                        "v_up": str(self.v_up),
+                        "yaw": str(self.yaw),
+                        "roll": str(self.roll),
+                        "pitch": str(self.pitch),
+                        "pilot_latitude": str(self.pilotlat),
+                        "pilot_longitude": str(self.pilotlong),
+                        "home_latitude": str(self.homelat),
+                        "home_longitude": str(self.homelong),
+                    }
+                ]
+            }]}
+            with open('db.json', 'w') as f:
+                json.dump(drones, f, indent=4)

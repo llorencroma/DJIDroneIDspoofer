@@ -16,17 +16,10 @@ class App(tkinter.Tk):
         self.title(self.APP_NAME)
         self.geometry(f"{self.WIDTH}x{self.HEIGHT}")
 
-        self.protocol("WM_DELETE_WINDOW", self.on_closing)
-
-
-        if sys.platform == "darwin":
-            self.bind("<Command-q>", self.on_closing)
-            self.bind("<Command-w>", self.on_closing)
-
         # Set the map
         self.map_widget = TkinterMapView(width=self.WIDTH, height=self.HEIGHT, corner_radius=0)
         self.map_widget.grid(row=1, column=0, columnspan=3, sticky="nsew")
-
+        self.map_widget.set_tile_server("https://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}&s=Ga",max_zoom=22)
         # List of the markers (drones)
         self.marker_list = []
 
@@ -39,10 +32,6 @@ class App(tkinter.Tk):
         for m in self.marker_list:
             m.delete()
         self.marker_list.clear()
-
-    def on_closing(self, event=0):
-        self.destroy()
-        exit()
 
     # To display the map
     def start(self):
