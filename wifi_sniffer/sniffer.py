@@ -1,6 +1,5 @@
 import argparse
 import threading
-import time
 from tkinter import *
 from tkinter import ttk
 from scapy.all import Dot11, Dot11Elt, sniff
@@ -16,9 +15,6 @@ TIMER = 30
 # In the spoofer the line "self.attribute2byte(self.uuid_len)" adds '\x00' to uuid len so that it represents the first
 # character of the UUID. For this reason the log does not work since it cannot print '\x00' as a character
 def parse_packet(payload):
-    sernum = b''
-    telemetry_payload = b''
-    info_payload = b''
     if payload[0:4] == b'Xb\x13\x10':
         # It is a telemetry payload
         telemetry_payload = payload
@@ -33,6 +29,8 @@ def parse_packet(payload):
                     d.start_time = time.time()
                     d.build_telemetry(telemetry_payload)
                     presence = True
+                    # Check if it is needed to update the marker
+                    d.update_marker(app.map_widget)
             if not presence:
                 # New drone
                 drone = Drone(sernum=sernum)
@@ -41,7 +39,7 @@ def parse_packet(payload):
                 drone.build_telemetry(telemetry_payload)
                 drones.append(drone)
                 # Add marker in the map for the drone detected
-                app.save_marker(app.map_widget.set_position(drone.lat, drone.long, marker=True))
+                drone.marker=app.map_widget.set_position(drone.lat, drone.long, marker=True)
         else:
             # New drone
             drone = Drone(sernum=sernum)
@@ -50,7 +48,7 @@ def parse_packet(payload):
             drone.build_telemetry(telemetry_payload)
             drones.append(drone)
             # Add marker in the map for the drone detected
-            app.save_marker(app.map_widget.set_position(drone.lat, drone.long, marker=True))
+            drone.marker=app.map_widget.set_position(drone.lat, drone.long, marker=True)
     else:
         # It is a flight info payload
         info_payload = payload
@@ -65,6 +63,8 @@ def parse_packet(payload):
                     d.start_time = time.time()
                     d.build_info(info_payload)
                     presence = True
+                    # Check if it is needed to update the marker
+                    d.update_marker(app.map_widget)
             if not presence:
                 # New drone
                 drone = Drone(sernum=sernum)
@@ -73,8 +73,7 @@ def parse_packet(payload):
                 drone.build_info(info_payload)
                 drones.append(drone)
                 # Add marker in the map for the drone detected
-                app.save_marker(app.map_widget.set_position(drone.lat, drone.long, marker=True))
-
+                drone.marker=app.map_widget.set_position(drone.lat, drone.long, marker=True)
         else:
             # New drone
             drone = Drone(sernum=sernum)
@@ -83,23 +82,20 @@ def parse_packet(payload):
             drone.build_info(info_payload)
             drones.append(drone)
             # Add marker in the map for the drone detected
-            app.save_marker(app.map_widget.set_position(drone.lat, drone.long, marker=True))
+            drone.marker = app.map_widget.set_position(drone.lat, drone.long, marker=True)
 
     for d in drones:
         print("Drones detected: " + str(len(drones)))
         d.log()  # Logging
         d.db()  # Save data in a json file
-
         # Check timer: if no packets received within 30 sec the drone is removed and not showed in the console
         if (time.time() - d.start_time) < TIMER:
             d.show()  # Print drone's information in the console
         else:
             # Timer elapsed
             drones.remove(d)
-            app.clear_marker_list()
-            for d in drones:
-                # Add marker in the map for the drone detected
-                app.save_marker(app.map_widget.set_position(d.lat, d.long, marker=True))
+            # Remove drone from the map
+            d.marker.delete()
 
 
 def packet_handler(packet):

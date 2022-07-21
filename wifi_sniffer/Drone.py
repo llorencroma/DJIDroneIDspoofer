@@ -43,6 +43,12 @@ class Drone:
         self.id = kwargs['id'] if "id" in kwargs and len(kwargs["id"]) > 0 else b''
         self.flightinfo = kwargs['flightinfo'] if "flightinfo" in kwargs and len(kwargs["flightinfo"]) > 0 else b''
         self.start_time = time.time()  # To keep track of the time of the last packet received
+        self.marker = kwargs['marker'] if "marker" in kwargs else None
+
+    def update_marker(self, map_widget):
+        if self.marker.position != (self.lat, self.long):
+            self.marker.delete()
+            self.marker = map_widget.set_position(self.lat, self.long, marker=True)
 
     def build_telemetry(self, payload):
         long = payload[25:29]
@@ -141,8 +147,7 @@ class Drone:
                      str(self.homelat), str(self.homelong), str(self.id), str(self.flightinfo))
 
     def db(self):
-        drone_counter = 0
-        position_counter = 0
+        counter = 0
         presence = False
         # Save detected drones in a json file as a db
         if check_file_exist('db.json'):
@@ -155,9 +160,9 @@ class Drone:
                     presence = True
                     # Add object position with incremental id
                     positions = d['positions']
-                    position_counter = len(positions) + 1
+                    counter = len(positions) + 1
                     detection = {
-                        "id": position_counter,
+                        "id": counter,
                         "timestamp": str(datetime.datetime.now()),
                         "latitude": str(self.lat),
                         "longitude": str(self.long),
@@ -181,7 +186,7 @@ class Drone:
 
             if not presence:
                 # New drone
-                drone_counter = drone_counter + 1
+                counter = counter + 1
                 new_drone = {
                     "sn": str(self.sernum),
                     "aircraft_type": str(self.type),
@@ -190,7 +195,7 @@ class Drone:
                     "flight_info": str(self.flightinfo),
                     "positions": [
                         {
-                            "id": drone_counter,
+                            "id": counter,
                             "timestamp": str(datetime.datetime.now()),
                             "latitude": str(self.lat),
                             "longitude": str(self.long),
@@ -214,7 +219,7 @@ class Drone:
                     json.dump(data, f, indent=4)
         else:
             # Create json file if it does not exist
-            drone_counter = drone_counter + 1
+            counter = counter + 1
             drones = {"drones": [{
                 "sn": str(self.sernum),
                 "aircraft_type": str(self.type),
@@ -223,7 +228,7 @@ class Drone:
                 "flight_info": str(self.flightinfo),
                 "positions": [
                     {
-                        "id": drone_counter,
+                        "id": counter,
                         "timestamp": str(datetime.datetime.now()),
                         "latitude": str(self.lat),
                         "longitude": str(self.long),

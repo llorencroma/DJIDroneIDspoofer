@@ -18,11 +18,11 @@ The current implementation offers several functionalities:
   * TIMER (configurable) maintained for each drone detected to allow the application to stop detecting a drone if no more DJI Remote IDs are received from that drone
 
 ## Limitations / Bugs
-The map does not update the changing position of a flying drone and it does not track the path.
+The map does not track the path.
 
 The timer may not be respected if there are many drones nearby to detect. This happens for some delays such as the time wasted during the execution time.
 
-The sniffer detects drones and shows them on the screen. When all the drones nearby disappear, the sniffer still continues showing drones until new drones appear, so until new packets are received.
+The sniffer detects drones and shows them on the screen. When all the drones nearby disappear, the sniffer still continues showing the last drones detected until new drones appear, so until new packets are received.
 
 # Technology and Frameworks
 The application is written in Python by using Scapy tool to capture and manipulate the packets.
@@ -31,7 +31,7 @@ Two Python GUI frameworks are employed that are *Tkinter* and *TkinterMapView*.
 
 To run the application a WiFi adapter is necessary.
 
-# Installation 
+# Installation
 Install the requirements for the application to run:
 
 `pip install scapy`
