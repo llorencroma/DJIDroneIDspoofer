@@ -2,17 +2,17 @@
 The project provides the source code for an example receiver implementation of WiFi-based DJI drones. It is able to detect DJI drones that are flying nearby by considering the reverse engineering work from Department 13 on DJI Remote ID.
 For further information see the white paper from Department 13: *"Anatomy of DJI Drone ID Implementation"*.
 
-The application continuously sniffs for beacon frame packets on the interface specified by the user as input and when a packet matches the specifiers from DJI Remote ID, it is processed to retrieve the information about the drone encoded. After retrieving this information, the drone is displayed on a map and a table shows all the information about that drone.
+The application continuously sniffs for beacon frame packets on the interface specified by the user as input and when a packet matches the specifiers from DJI Remote ID, it is processed to retrieve the information about the drone encoded. After retrieving this information, the program prints in the terminal all the data for each detection, it displays the drone detected in a map and it shows in a table all the information about that drone.
 
 # Motivation
-This project proves that everyone with basic knowledge and cheap hardware can build its own receiver for drone detection in order to stop relying on expensive product like the DJI Aeroscope. In this way, also possible disclosure of data could be avoided and custom receivers can be implemented based on the needs. Moreover, this work also considers the actual Regulation on Remote ID in drones that mandates the open broadcast of this information over standard communication protocols (e.g., Bluetooth or WiFi).
+This project proves that everyone with basic knowledge and cheap hardware can build a receiver for drone detection in order to stop relying on expensive product like the DJI Aeroscope. In this way, possible disclosure of data could be avoided as well as custom receivers can be implemented based on the needs. This is possible since data broadcast by drones is unencrypted. The tool implemented aims at working as a DJI AeroScope even if it only considers the WiFi communication. However, anyone with expert knowledge of software-defined radio (SDR) can build a receiver able to detect DJI drones. Indeed, this work also considers the actual Regulation on Remote ID in drones that mandates the open broadcast of this information over standard communication protocols (e.g., Bluetooth or WiFi). Hence, by changing how it parses the bytes of the packets received it could be used as a receiver for drones that broadcast Remote ID through WiFi 802.11 beacon frames.
 
 For more information about the Regulation on Remote ID see the [References](#references)
 
 # Build status
 The current implementation offers several functionalities:
   * TABLE showing drones information updated in real-time
-  * MAP showing drones detected with a marker and updates if positions change
+  * MAP showing drones detected with a marker without tracking the path. It stops showing drone if it does not receive packets from them within 30 seconds (configurable)
   * LOG file created while the application is running. It contains all the detections along with the related timestamps
   * JSON file created while the application is running. It stores the drones detected as object and for each drone all the positions detected are saved with the related timestamps
   * TIMER (configurable) maintained for each drone detected to allow the application to stop detecting a drone if no more DJI Remote IDs are received from that drone
@@ -21,8 +21,6 @@ The current implementation offers several functionalities:
 The map does not track the path.
 
 The timer may not be respected if there are many drones nearby to detect. This happens for some delays such as the time wasted during the execution time.
-
-The sniffer detects drones and shows them on the screen. When all the drones nearby disappear, the sniffer still continues showing the last drones detected until new drones appear, so until new packets are received.
 
 # Technology and Frameworks
 The application is written in Python by using Scapy tool to capture and manipulate the packets.
