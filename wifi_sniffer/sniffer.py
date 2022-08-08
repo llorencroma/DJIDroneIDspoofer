@@ -1,5 +1,6 @@
 import argparse
 import threading
+import time
 from tkinter import *
 from tkinter import ttk
 from scapy.all import Dot11, Dot11Elt, sniff
@@ -10,11 +11,14 @@ from App import *
 # Due to limitations in how the sniffer is implemented, small timer leads to lose drones even if packets are received
 # This is due to the elapsed time lost in the execution of the code
 TIMER = 30
+LAST_PACKET_TS = 0
 
 
 # In the spoofer the line "self.attribute2byte(self.uuid_len)" adds '\x00' to uuid len so that it represents the first
 # character of the UUID. For this reason the log does not work since it cannot print '\x00' as a character
 def parse_packet(payload):
+    global LAST_PACKET_TS
+    LAST_PACKET_TS = time.time()
     if payload[0:4] == b'Xb\x13\x10':
         # It is a telemetry payload
         telemetry_payload = payload
@@ -39,7 +43,7 @@ def parse_packet(payload):
                 drone.build_telemetry(telemetry_payload)
                 drones.append(drone)
                 # Add marker in the map for the drone detected
-                drone.marker=app.map_widget.set_position(drone.lat, drone.long, marker=True)
+                drone.marker = app.map_widget.set_position(drone.lat, drone.long, marker=True)
         else:
             # New drone
             drone = Drone(sernum=sernum)
@@ -48,7 +52,7 @@ def parse_packet(payload):
             drone.build_telemetry(telemetry_payload)
             drones.append(drone)
             # Add marker in the map for the drone detected
-            drone.marker=app.map_widget.set_position(drone.lat, drone.long, marker=True)
+            drone.marker = app.map_widget.set_position(drone.lat, drone.long, marker=True)
     else:
         # It is a flight info payload
         info_payload = payload
@@ -73,7 +77,7 @@ def parse_packet(payload):
                 drone.build_info(info_payload)
                 drones.append(drone)
                 # Add marker in the map for the drone detected
-                drone.marker=app.map_widget.set_position(drone.lat, drone.long, marker=True)
+                drone.marker = app.map_widget.set_position(drone.lat, drone.long, marker=True)
         else:
             # New drone
             drone = Drone(sernum=sernum)
@@ -191,6 +195,19 @@ def sniff_work(iface):
     sniff(iface=iface, prn=packet_handler)
 
 
+def check_ts():
+    while True:
+        # To fix delay timer
+        time.sleep(0.1)
+        if (time.time() - LAST_PACKET_TS) > TIMER:
+            if drones:
+                for d in drones:
+                    # Remove each drone from the list to clean the table
+                    drones.remove(d)
+                    # Remove each drone from the map to clean the map
+                    d.marker.delete()
+
+
 if __name__ == '__main__':
     # List to keep track of detected drones
     drones = []
@@ -209,4 +226,7 @@ if __name__ == '__main__':
         sniff_thread.start()
         gui_thread = threading.Thread(target=build_table, )
         gui_thread.start()
+
+        check_thread = threading.Thread(target=check_ts, )
+        check_thread.start()
         app.start()
