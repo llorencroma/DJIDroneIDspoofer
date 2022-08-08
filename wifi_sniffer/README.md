@@ -12,15 +12,9 @@ For more information about the Regulation on Remote ID see the [References](#ref
 # Build status
 The current implementation offers several functionalities:
   * TABLE showing drones information updated in real-time
-<<<<<<< HEAD
   * MAP showing drones detected with a marker without tracking the path. It stops showing drone if it does not receive packets from them within 30 seconds (configurable)
   * LOG file created while the application is running. It contains all the detections along with the related timestamps
-  * JSON file created while the application is running. It stores the drones detected and for each drone all the detections with the related timestamps
-=======
-  * MAP showing drones detected with a marker and updates if positions change
-  * LOG file created while the application is running. It contains all the detections along with the related timestamps
   * JSON file created while the application is running. It stores the drones detected as object and for each drone all the positions detected are saved with the related timestamps
->>>>>>> e7336ecc971ea732b77606c63119d328a3fc8543
   * TIMER (configurable) maintained for each drone detected to allow the application to stop detecting a drone if no more DJI Remote IDs are received from that drone
 
 ## Limitations / Bugs
