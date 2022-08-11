@@ -9,7 +9,7 @@ This project proves that everyone with basic knowledge and cheap hardware can bu
 
 For more information about the Regulation on Remote ID see the [References](#references)
 
-# Build status
+## Build status
 The current implementation offers several functionalities:
   * TABLE showing drones information updated in real-time
   * MAP showing drones detected with a marker without tracking the path. It stops showing drones if it does not receive packets from them within 30 seconds (configurable)
@@ -17,19 +17,19 @@ The current implementation offers several functionalities:
   * JSON file created while the application is running. It stores the drones detected as object and for each drone all the positions detected are saved with the related timestamps
   * TIMER (configurable) maintained for each drone detected to allow the application to stop detecting a drone if no more DJI Remote IDs are received from that drone
 
-## Limitations / Bugs
+### Limitations / Bugs
 The map does not track the path.
 
 The timer may not be respected if there are many drones nearby to detect. This happens for some delays such as the time wasted during the execution time.
 
-# Technology and Frameworks
+## Technology and Frameworks
 The application is written in Python by using Scapy tool to capture and manipulate the packets.
 
 Two Python GUI frameworks are employed that are *Tkinter* and *TkinterMapView*.
 
 To run the application a WiFi adapter is necessary.
 
-# Installation
+## Installation
 Install the requirements for the application to run:
 
 `pip install scapy`
@@ -52,12 +52,12 @@ Run the sniffer with the command:
 
 `sudo python3 sniffer.py -i <interface-name>`
 
-# Future version
+## Future version
 This work is a first version of a DJI Remote ID Sniffer, but more functionalities can be added in order to have an application offering the same features of the DJI Aeroscope. Hence, the future developments include:
   * Add the tracking path of drones by using the methods provided by the [*TkinterMapView*](https://github.com/TomSchimansky/TkinterMapView) framework
   * Add mouse events when the user clicks on drones in the map view to show the drone's related information
 
-# References
+## References
 [FAA rule](https://www.faa.gov/uas/getting_started/remote_id)\
 [EU rules 945/2019](https://eur-lex.europa.eu/eli/reg_del/2019/945/2020-08-09) and [EU rules 947/2019](https://eur-lex.europa.eu/eli/reg_impl/2019/947/2021-08-05)\
 [ASTM standard](https://www.astm.org/f3411-22.html)\
