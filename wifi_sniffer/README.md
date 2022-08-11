@@ -4,15 +4,15 @@ For further information see the white paper from Department 13: *"Anatomy of DJI
 
 The application continuously sniffs for beacon frame packets on the interface specified by the user as input and when a packet matches the specifiers from DJI Remote ID, it is processed to retrieve the information about the drone encoded. After retrieving this information, the program prints in the terminal all the data for each detection, it displays the drone detected in a map and it shows in a table all the information about that drone.
 
-# Motivation
-This project proves that everyone with basic knowledge and cheap hardware can build a receiver for drone detection in order to stop relying on expensive product like the DJI Aeroscope. In this way, possible disclosure of data could be avoided as well as custom receivers can be implemented based on the needs. This is possible since data broadcast by drones is unencrypted. The tool implemented aims at working as a DJI AeroScope even if it only considers the WiFi communication. Indeed, this work also considers the actual Regulation on Remote ID in drones that mandates the open broadcast of this information over standard communication protocols (e.g., Bluetooth or WiFi). Hence, by changing how it parses the bytes of the packets received it could be used as a receiver for drones that broadcast Remote ID through WiFi 802.11 beacon frames.
+## Motivation
+This project proves that everyone with basic knowledge and cheap hardware can build a receiver for drone detection in order to stop relying on expensive product like the DJI Aeroscope. In this way, possible disclosure of data could be avoided as well as custom receivers can be implemented based on the needs. This is possible since data broadcast by drones is unencrypted. The tool implemented aims at working as a DJI AeroScope even if it only considers the WiFi communication. Indeed, this work also take into account the actual Regulation on Remote ID in drones that mandates the open broadcast of this information over standard communication protocols (e.g., Bluetooth or WiFi). Hence, by changing how it parses the bytes of the packets received it could be used as a receiver for drones that broadcast Remote ID through WiFi 802.11 beacon frames.
 
 For more information about the Regulation on Remote ID see the [References](#references)
 
 # Build status
 The current implementation offers several functionalities:
   * TABLE showing drones information updated in real-time
-  * MAP showing drones detected with a marker without tracking the path. It stops showing drone if it does not receive packets from them within 30 seconds (configurable)
+  * MAP showing drones detected with a marker without tracking the path. It stops showing drones if it does not receive packets from them within 30 seconds (configurable)
   * LOG file created while the application is running. It contains all the detections along with the related timestamps
   * JSON file created while the application is running. It stores the drones detected as object and for each drone all the positions detected are saved with the related timestamps
   * TIMER (configurable) maintained for each drone detected to allow the application to stop detecting a drone if no more DJI Remote IDs are received from that drone
@@ -39,7 +39,7 @@ Install the requirements for the application to run:
 `pip install tkintermapview`
 
 
-Put the WiFi adapter in monitor mode to allow the laptop to monitor all the traffic received on a wireless channel:
+Set the WiFi adapter in monitor mode to allow the laptop to monitor all the traffic received on a wireless channel:
 
 `sudo ip link set <interface-name> down`
 
