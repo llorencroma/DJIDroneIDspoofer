@@ -22,6 +22,8 @@ The map does not track the path.
 
 The timer may not be respected if there are many drones nearby to detect. This happens for some delays such as the time wasted during the execution time.
 
+The sniffer detects only WiFi-controlled drones.
+
 ## Technology and Frameworks
 The application is written in Python by using Scapy tool to capture and manipulate the packets.
 
@@ -56,6 +58,7 @@ Run the sniffer with the command:
 This work is a first version of a DJI Remote ID Sniffer, but more functionalities can be added in order to have an application offering the same features of the DJI Aeroscope. Hence, the future developments include:
   * Add the tracking path of drones by using the methods provided by the [*TkinterMapView*](https://github.com/TomSchimansky/TkinterMapView) framework
   * Add mouse events when the user clicks on drones in the map view to show the drone's related information
+  * Add parsing for the aircraft model (details for the prefix and models in this [paper](https://www.researchgate.net/publication/362230301_DJI_drone_IDs_are_not_encrypted) 
 
 ## References
 [FAA rule](https://www.faa.gov/uas/getting_started/remote_id)\
