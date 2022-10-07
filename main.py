@@ -10,18 +10,18 @@ from Drone import *
 from scapy.utils import PcapWriter
 import inputs
 from inputs import get_key
+import multiprocessing
 
 MAX_TRIGGERS = 1023
 MAX_JXY = 32767
 
 
 #### TODO
-#  YAW ROLL PITCH IMPLEMENTATION
-#  LATITUDE MOVEMENT ARE WAY BIGGER, WHY?
-#  Speed, height, altitude are chosen randomly, but max value is set to sth reasonable... not 2**16-1
-#  CONTROL BOUNDARIES. MAximum and minimum values
+#   Send in parallel different queues
 #
-#
+
+
+
 
 '''
    Assemble the DJI payload to a 802.11 beacon packet
@@ -289,7 +289,11 @@ def one_drone():
         # packet_list.append(telemetry_packet)
         # sendp(packet_list, iface=interface, loop=1, inter=0.5)
 
-def random_spoof(n, point=None):
+
+
+
+
+def random_spoof(n, multi=False, point=None):
     
     n_drones = n
     # ToDo Check if I need to copy the packet, or otherwise it reuses the same
@@ -321,7 +325,11 @@ def random_spoof(n, point=None):
     print("=========All drones are ready ==================")
     #pktdump = PcapWriter("telemetry.pcap", append=True, sync=True)
     #pktdump.write(telemetry_packet)
-    sendp(packet_list, iface=interface, loop=1, inter=2)
+    if multi is False:
+        sendp(packet_list, iface=interface, loop=1, inter=1)
+    else:
+        with Pool(5) as p:
+            p.map(sendp(packet_list, iface=interface, loop=1, inter=1))
 
 
 '''
@@ -333,6 +341,8 @@ Arguments indicate whether to spoof a single specific drone or N random drones (
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--interface", help="Spoof on drone. poofing parameters are set by the user.")
+parser.add_argument("-m", "--multi", help="Test multiprocessing")
+
 parser.add_argument("-r", "--random", help="Spoof randomly N drones")
 parser.add_argument("-a", "--area", help="Define point where drones will be spoofed eg: -a '46.76 7.62 '")
 
@@ -349,7 +359,8 @@ Interface must be in monitor mode")
 else:
 
     interface = args.interface
-    
+    if args.multi:
+        multi = True
     if args.random : # Consider fail when you pass 0 drones... ToDo
         n_random = args.random
         
@@ -358,6 +369,8 @@ else:
             point = args.area.split()
             print(point)
             random_spoof(n_random, point)
+            raise SystemExit("END")
+
         random_spoof(n_random)
 
     else: #Spoof only one drone

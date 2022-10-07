@@ -20,6 +20,8 @@ class Drone:
         if len(args) == 2 :
             index= args[0] 
             point= args[1]
+        elif len(args) == 3:
+
                    
         self.ssid = kwargs['ssid'] if "ssid" in kwargs and len(kwargs["ssid"]) > 0 else ''.join(["FAKE-", str(index + 1)])
         self.mac_address = "60:60:1f:%02x:%02x:%02x" % (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
@@ -66,7 +68,11 @@ class Drone:
         self.uuid = kwargs['uuid'] if "uuid" in kwargs and len(kwargs['uuid']) > 0 else ''.join(random.choice(string.digits) for i in range(7))
         self.uuid_len = len(self.uuid)
 
-        [print(attribute, getattr(self, attribute)) for attribute in dir(self) if not attribute.startswith("__") and not callable(self)]
+
+        if(verbose): ## TODO Include Verbose option to print all Fields Values
+            [print(attribute, getattr(self, attribute)) for attribute in dir(self) if not attribute.startswith("__") and not callable(self)]
+        else:
+            print("Longitud -->  %s \nLatitude --> %s " % (self.longitude,self.latitude))
 
   
     '''
