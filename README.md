@@ -73,5 +73,6 @@ With that feature, X packets with random payloads will be spoofed around a certa
 =======
 
 ## Contributors
-DroneIDspoofer:  Llorenç Romá 
+DroneIDspoofer:  Llorenç Romá
+
 WifiSniffer:     Beatrice Dallomo, @beatricedall
