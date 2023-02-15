@@ -6,7 +6,29 @@ packets, in the Vendor ID tag. Therefore, using Scapy in that case, 802.11 Beaco
 
 The user can spoof: (a) 1 controlled DroneID (b) X drones with random values  (c) X drones with random values around a location point.
 When spoofing a single DronwID, the location can be controlled using keyboard arrows. Location, speed, altitude, pilot location and others can be controlled using an XBOX controller.
- 
+
+## Project structure
+```bash
+.
+├── Beacon.py: Class reprenting the Beacon object, with all the fields according to 802.11. It builds a Beacon with Scapy
+├── Beacon.pyc: Python generated file wiht the compiled bytecode from Beacon.py
+├── Drone.py: Class reprenting a DroneID object. It builds the necessary DroneID fields according to the DJI format
+├── README.md
+├── __init__.py
+├── interface-monitor.sh: Script to set WiFi interface in monitor mode, which is necessary to send/receive all wifi traffic.
+├── main.py: Implement the logic of the spoofer. Creating DroneIDs objects from Drone class, creating Beacons associated to the DroneIDs, generating the whole 802.11 packet and transmiting them in a loop.
+├── replay_mavic.py: Basic replay attack example. We replay a real Beacon captured (with Wireshark) from a DJI Mavic drone. 
+├── run-demo.sh: (TEST) Script that runs the spoofer. Not 100% functional. 
+└── wifi_sniffer: (TEST) This is part of the project from Beatrice Dallomo, who implemented an Aeroscope-like GUI, which tracks drones. 
+    ├── App.py
+    ├── Drone.py
+    ├── README.md
+    ├── __pycache__
+    │   └── Drone.cpython-38.pyc
+    └── sniffer.py
+
+```
+
 
 ## What do you need?
 A WiFi adapter able to send packets is required.
@@ -49,3 +71,7 @@ With that feature, X packets with random payloads will be spoofed around a certa
 3. If you see 0 kb/s in the Aeroscope (top-left corner): do step 1 or unplug/plug usb from aeroscope
 =======
 =======
+
+## Contributors
+DroneIDspoofer:  Llorenç Romá 
+WifiSniffer:     Beatrice Dallomo, @beatricedall
