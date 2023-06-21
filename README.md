@@ -1,5 +1,5 @@
 # DJI DroneID Spoofer
-It can advertise thousands of fake drones recognised by the DJI Aeroscope device. Mainly based on the report from Department13 "Anatomy of dji drone id implementation re aeroscope". 
+It can advertise multiple fake Remote ID recognised by the DJI Aeroscope device as flying drones. Mainly based on the report from Department13 "Anatomy of dji drone id implementation re aeroscope". 
 
 DJI drones broadcast flight information. In the case of models controlled through 802.11 standard, this informations is added as a payload to 802.11 Beacon type 
 packets, in the Vendor ID tag. Therefore, using Scapy in that case, 802.11 Beacon packets can be created, and the payload can be modified at will.
