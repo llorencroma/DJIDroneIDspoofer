@@ -1,4 +1,3 @@
-from __future__ import print_function
 from scapy.layers.dot11 import *
 from scapy.utils import rdpcap, hexdump
 from scapy.sendrecv import sendp
@@ -7,10 +6,8 @@ import calendar;
 import time;
 
 
-
 class Beacon:
     def __init__(self, source_address, ssid ):
-
 
         if len(source_address) == 0:
             source_address = "60:60:1f:%02x:%02x:%02x" % (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))

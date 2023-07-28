@@ -36,7 +36,6 @@ class DroneID:
 interface = 'wlx801f02f1e3dc'
 drone = DroneID()
 
-
 # 802.11 MAC HEADER
 # ==== Frame Control 2 bytes: 0x8000 ====
 version = 0
@@ -101,19 +100,14 @@ vendor_payload = b'Xb\x13\x10\x02M\x063\x1f0K1CG6G3AH8V2M\x00\x00\x00\x00\x00\x0
 # Flight Info
 vendor_payload2 = b'Xb\x13\x113K1CG6G3AH8V2M\x00\x00\xcc\xaa\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
 
-
-
 # Vendor Specific: 26:37:12 (DJI)
 ie_vendor_dji = Dot11EltVendorSpecific(ID=221, len = len(vendor_payload) + 3 ,oui=0x263712, info = vendor_payload)
 # Flight Info
 ie_vendor_dji_flighT_info = Dot11EltVendorSpecific(ID=221, len = len(vendor_payload2) + 3 ,oui=0x263712, info = vendor_payload2)
 
-
 # We could add country info element since this info is received by the Aeroscope
 
-
 # Let's build the packet
-
 # Sending two DroneID on the same packet does not work
 #packet = RadioTap() / Dot11() / beacon_fields / ie_ssid / ie_rates / ie_vendor_dji# Assemble all parts
 
@@ -133,4 +127,4 @@ packet_flightinfo = packet_flightinfo /ie_vendor_dji_flighT_info
 packet_list = [packet, packet_flightinfo]
 print(packet_list)
 
-sendp(packet,iface= interface, loop = 1, inter= 0.3ß
+sendp(packet,iface= interface, loop = 1, inter= 0.3)

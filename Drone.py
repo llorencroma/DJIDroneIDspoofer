@@ -1,15 +1,14 @@
-import random, string
-from math import floor
-import time, os
+import random
+import string
+import  os
 import struct
-
+from math import floor
 
 class Drone:
     common_header = b'Xb\x13'
     telemetry_byte = b'\x10'
     flight_info_byte = b'\x11'
     random_source = string.ascii_uppercase + string.digits  # character set to generate random strings
-
 
     def __init__(self,*args, **kwargs):
         print('args: ', args, ' kwargs: ', kwargs)
@@ -20,59 +19,56 @@ class Drone:
         if len(args) == 2 :
             index= args[0] 
             point= args[1]
-        elif len(args) == 3:
+        elif len(args) == 3:                   
+            self.ssid = kwargs['ssid'] if "ssid" in kwargs and len(kwargs["ssid"]) > 0 else ''.join(["FAKE-", str(index + 1)])
+            self.mac_address = "60:60:1f:%02x:%02x:%02x" % (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+            self.state = b'\x02M\x063\x1f' # Dunno what's exactly that
+            self.sernum = ''.join(random.choice(Drone.random_source) for i in range(16))
+            
+            # INPUT * 174533.0 little endian
+            # ====== Locations ===========
+            self.longitude = float(kwargs['lon']) if "lon" in kwargs and len(kwargs["lon"]) > 0  else self.random_location(point)[0]
+            #self.longitude_bytes = self.location2bytes(self.longitude)
+            self.latitude = float(kwargs['lat']) if "lat" in kwargs and len(kwargs["lat"]) > 0  else self.random_location(point)[1]
+            #self.latitude_bytes = self.location2bytes(self.latitude)
 
-                   
-        self.ssid = kwargs['ssid'] if "ssid" in kwargs and len(kwargs["ssid"]) > 0 else ''.join(["FAKE-", str(index + 1)])
-        self.mac_address = "60:60:1f:%02x:%02x:%02x" % (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-        self.state = b'\x02M\x063\x1f' # Dunno what's exactly that
-        self.sernum = ''.join(random.choice(Drone.random_source) for i in range(16))
-        
-        # INPUT * 174533.0 little endian
-        # ====== Locations ===========
+            self.longitude_home = float(kwargs['home_lon']) if "home_lon" in kwargs and len(kwargs["home_lon"]) > 0  else self.random_location()[0]
+            #self.longitude_home = self.location2bytes(longitude_home)
+            self.latitude_home = float(kwargs['home_lat']) if "home_lat" in kwargs and len(kwargs["home_lat"]) > 0  else self.random_location()[1] 
+            #self.latitude_home = self.location2bytes(latitude_home)
 
-        self.longitude = float(kwargs['lon']) if "lon" in kwargs and len(kwargs["lon"]) > 0  else self.random_location(point)[0]
-        #self.longitude_bytes = self.location2bytes(self.longitude)
-        self.latitude = float(kwargs['lat']) if "lat" in kwargs and len(kwargs["lat"]) > 0  else self.random_location(point)[1]
-        #self.latitude_bytes = self.location2bytes(self.latitude)
+            # home and pilot location will be the same
+            self.pilot_lon = float(kwargs['home_lon']) if "home_lon" in kwargs and len(kwargs["home_lon"]) > 0  else self.random_location()[0]
+            self.pilot_lat = float(kwargs['home_lat']) if "home_lat" in kwargs and len(kwargs["home_lat"]) > 0  else self.random_location()[1] 
 
-        self.longitude_home = float(kwargs['home_lon']) if "home_lon" in kwargs and len(kwargs["home_lon"]) > 0  else self.random_location()[0]
-        #self.longitude_home = self.location2bytes(longitude_home)
-        self.latitude_home = float(kwargs['home_lat']) if "home_lat" in kwargs and len(kwargs["home_lat"]) > 0  else self.random_location()[1] 
-        #self.latitude_home = self.location2bytes(latitude_home)
+            # Make ranges reasonable
+            self.altitude = int(kwargs['altitude']) if "altitude" in kwargs and len(kwargs['altitude']) > 0  else self.randomN(0,150) #2**16-1) # Max 16 bits little endian unsgined
+            self.height = self.randomN(0,500)# 2**16-1)  # Max 16 bits little endian unsgined
 
-        # home and pilot location will be the same
-        self.pilot_lon = float(kwargs['home_lon']) if "home_lon" in kwargs and len(kwargs["home_lon"]) > 0  else self.random_location()[0]
-        self.pilot_lat = float(kwargs['home_lat']) if "home_lat" in kwargs and len(kwargs["home_lat"]) > 0  else self.random_location()[1] 
+            # ====== Drone axes motion and axis speed========
 
-        # Make ranges reasonable
-        self.altitude = int(kwargs['altitude']) if "altitude" in kwargs and len(kwargs['altitude']) > 0  else self.randomN(0,150) #2**16-1) # Max 16 bits little endian unsgined
-        self.height = self.randomN(0,500)# 2**16-1)  # Max 16 bits little endian unsgined
+            #speed_aeroscope = (speed / 100)
+            self.v_north =  100 * self.randomN(-50, 50) # self.randomN((-2**15),2**15-1) # X
+            self.v_east = 100 * self.randomN(-50, 50) #self.randomN((-2**15),2**15-1) # Y
+            self.v_up =  100 * self.randomN(-50, 50) #self.randomN((-2**15),2**15-1)
 
-        # ====== Drone axes motion and axis speed========
+            # Aeroscope defaul value is 180. If we sent \x00\x00 it will show 180
+            # From here it shows:   180 + (received/100) / 57.296
+            # If we want to show 190 we send (190-180) * 100
+            self.pitch = self.randomN((-2**15),2**15-1)       
+            self.roll = self.randomN((-2**15),2**15-1)          
+            self.yaw = self.randomN(0,360)            
 
-        #speed_aeroscope = (speed / 100)
-        self.v_north =  100 * self.randomN(-50, 50) # self.randomN((-2**15),2**15-1) # X
-        self.v_east = 100 * self.randomN(-50, 50) #self.randomN((-2**15),2**15-1) # Y
-        self.v_up =  100 * self.randomN(-50, 50) #self.randomN((-2**15),2**15-1)
-
-        # Aeroscope defaul value is 180. If we sent \x00\x00 it will show 180
-        # From here it shows:   180 + (received/100) / 57.296
-        # If we want to show 190 we send (190-180) * 100
-        self.pitch = self.randomN((-2**15),2**15-1)       
-        self.roll = self.randomN((-2**15),2**15-1)          
-        self.yaw = self.randomN(0,360)            
-
-        # ===== Drone's info =========
-        self.prod_type = os.urandom(1) # b'x\10' # One byte length value
-        self.uuid = kwargs['uuid'] if "uuid" in kwargs and len(kwargs['uuid']) > 0 else ''.join(random.choice(string.digits) for i in range(7))
-        self.uuid_len = len(self.uuid)
+            # ===== Drone's info =========
+            self.prod_type = os.urandom(1) # b'x\10' # One byte length value
+            self.uuid = kwargs['uuid'] if "uuid" in kwargs and len(kwargs['uuid']) > 0 else ''.join(random.choice(string.digits) for i in range(7))
+            self.uuid_len = len(self.uuid)
 
 
-        if(verbose): ## TODO Include Verbose option to print all Fields Values
-            [print(attribute, getattr(self, attribute)) for attribute in dir(self) if not attribute.startswith("__") and not callable(self)]
-        else:
-            print("Longitud -->  %s \nLatitude --> %s " % (self.longitude,self.latitude))
+            if(verbose): ## TODO Include Verbose option to print all Fields Values
+                [print(attribute, getattr(self, attribute)) for attribute in dir(self) if not attribute.startswith("__") and not callable(self)]
+            else:
+                print("Longitud -->  %s \nLatitude --> %s " % (self.longitude,self.latitude))
 
   
     '''
@@ -192,8 +188,6 @@ class Drone:
             #print("Attribute {}: {}".format(attribute,att_type))
             return attribute
     
-
-
     '''
     Returns a random location. Longitude or Latitude
     If a POINT is given, the random location is around the point
@@ -209,8 +203,6 @@ class Drone:
             lat_new = float(point[0]) + self.randomN(0, 9) / area_range
             lon_new = float(point[1]) + self.randomN(0, 9) / area_range
             return lon_new, lat_new
-
-
 
     '''
     Random number between 'a' and 'b'
