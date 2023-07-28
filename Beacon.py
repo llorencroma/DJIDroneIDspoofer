@@ -35,7 +35,7 @@ class Beacon:
         self.cap_flags = 0x0431         # Capability flags... hardcoded
 
         self.ssid = ssid
-    
+
 
     '''
     It returns the scapy packet corresponding to the main fields of a Beacon packet
@@ -68,7 +68,7 @@ class Beacon:
     def set_addr2(self, beacon_base_packet, new_address):
         beacon_base_packet.addr2 = new_address
         beacon_base_packet.addr3 = new_address
-    
+
 
     '''
     Changes the SSID of the Beacon packet
@@ -76,5 +76,3 @@ class Beacon:
     def set_ssid(self, beacon_base_packet, ssid_value):
         self.ssid = ssid_value
         beacon_base_packet.ssid = ssid_value
-
-    

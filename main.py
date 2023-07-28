@@ -15,6 +15,7 @@ from Drone import *
 
 MAX_TRIGGERS = 1023
 MAX_JXY = 32767
+interface = "wlan0"
 
 '''
    Assemble the DJI payload to a 802.11 beacon packet
@@ -105,7 +106,7 @@ def process_event(drone, axis, value, ev_type):
     print("Type: {} Code: {} State: {}".format(ev_type, axis, value)) # Events we actually want
 
     if axis == "X" or axis == "LEFT" or axis == "RIGHT": # Increase Longitude and speed according to value
-        
+
         print("Update longitude")
         if axis == "LEFT":
             value_sign = -1
@@ -115,7 +116,7 @@ def process_event(drone, axis, value, ev_type):
         drone.update_longitude(value_sign) 
 
     elif axis == "Y" or axis == "UP" or axis == "DOWN": # Modify Latitude
-         
+
         print("Update latitude")
 
         if axis == "DOWN":
@@ -129,12 +130,12 @@ def process_event(drone, axis, value, ev_type):
         
         print("Update Pilot longitude")
         drone.update_pilot_longitude(value_sign)
-            
+
     elif axis == "HAT0Y": # Modify Latitude
-        
+
         print("Update Pilot latitude")
         drone.update_pilot_latitude(value_sign)
-        
+
     elif axis == "RY":
 
         print("Update altitude")
@@ -151,12 +152,12 @@ def process_event(drone, axis, value, ev_type):
 
     # Change speed: Aeroscope shows 3 different colors according to speed
     elif axis == "TL" and value == 1: # Skip when button released event.
-        
+
         drone.v_east =  (drone.v_east + 200) % 2500# speed is divided by 100 in the aeroscope.If we want to increase 1 in the aeroscope, we add 100 here
         drone.v_north = (drone.v_east + 200) % 2500
-        
+
     elif axis == "Z": # Increase speed's values, both in X and Y axis
-        
+
         if value == 0: # If not pressed ToDo ... not working. Do we really want that
             drone.v_north = 0
             drone.v_east = 0
@@ -165,17 +166,17 @@ def process_event(drone, axis, value, ev_type):
         elif value == MAX_TRIGGERS: # keep increasing
             drone.v_east = floor(drone.v_east + 100) if drone.v_east > 0 else floor(drone.v_east - 100)
             drone.v_north = floor(drone.v_north + 100) if drone.v_north > 0 else floor(drone.v_north - 100)
-        
+
         else: # Speed is related to the value received. Lets normalize it until +-25
             new_speed = 25 * normalize (value) * 100 # speed multiplies 100 always
             drone.v_north = floor(new_speed)
             drone.v_east = floor(new_speed)
-        
+
     elif axis == "MODE": # Random position
         #restart = True
         drone.longitude, drone.latitude = drone.random_location()
         drone.pilot_lon, drone.pilot_lat = drone.random_location()
-    
+
     return True
 
 def get_gamepad():
@@ -193,7 +194,7 @@ If it does not get any input, the values are set randomly
 
 If it detects a joystic, it will process the events and will update drone's values.
 '''
-def one_drone():
+def one_drone(iface):
     print("Press intro to set default")
     ssid = str(input("SSID: "))
     lat = (input("Latitude: "))
@@ -202,7 +203,6 @@ def one_drone():
     home_lat = (input("Home Latitude: "))
     home_long = (input("Home Longitude: "))
     uuid = str(input("UUID (16 chars): "))
-  
 
     # Set drone's initial attributes
     drone = Drone(ssid=ssid, lat=lat, lon=lon, altitude=altitude, home_lat=home_lat, home_lon=home_long, uuid=uuid)
@@ -216,7 +216,7 @@ def one_drone():
     # Flight Info beacons It won't change
     finfo_payload = drone.build_finfo() # ToDo Get user input toset flight info
     finfo_packet = create_packet(beacon_base_packet,finfo_payload)
-    
+
     joystick = get_gamepad()
     print("Joystick  {}".format(joystick))
     send_thread = threading.Thread(target=thread_send, args=(drone, beacon_base_packet))
@@ -232,7 +232,7 @@ def one_drone():
             try:
                 print("Waiting event")
                 events = joystick._do_iter() # It blocks untl event is detected
-                
+
                 #does not work still blocks...
                 if events is None or len(events) == 0:
                     print("About to break. No events... but does not work")
@@ -249,6 +249,7 @@ def one_drone():
                 send_thread.join()
                 break
     else: # No joystick
+
         '''
         Spoofing a single drone without any motion
         '''
@@ -275,8 +276,8 @@ def one_drone():
         # sendp(packet_list, iface=interface, loop=1, inter=0.5)
 
 
-def random_spoof(n, multi=False, point=None):
-    
+def random_spoof(n, point=None):
+
     n_drones = n
     # ToDo Check if I need to copy the packet, or otherwise it reuses the same
 
@@ -292,7 +293,7 @@ def random_spoof(n, multi=False, point=None):
         print("===========================")
         print("Setting Drone {}".format(i))
         print("===========================")
-        
+
         drone = Drone(i, point)
         beacon_base_copy.ssid =  drone.ssid
         beacon_base_copy.addr2 = drone.mac_address
@@ -303,15 +304,11 @@ def random_spoof(n, multi=False, point=None):
         payload = drone.build_telemetry()
         telemetry_packet = create_packet(beacon_base_copy, payload)
         packet_list.append(telemetry_packet)
-    
+
     print("=========All drones are ready ==================")
     #pktdump = PcapWriter("telemetry.pcap", append=True, sync=True)
     #pktdump.write(telemetry_packet)
-    if multi is False:
-        sendp(packet_list, iface=interface, loop=1, inter=1)
-    else:
-        with Pool(5) as p:
-            p.map(sendp(packet_list, iface=interface, loop=1, inter=1))
+    sendp(packet_list, iface=interface, loop=1, inter=1)
 
 '''
 =====================================================================
@@ -322,11 +319,10 @@ indicate whether to spoof a single specific drone or N random drones (around a g
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--interface", help="Spoof on drone. poofing parameters are set by the user.")
-    parser.add_argument("-m", "--multi", help="Test multiprocessing")
-
     parser.add_argument("-r", "--random", help="Spoof randomly N drones")
     parser.add_argument("-a", "--area", help="Define point where drones will be spoofed eg: -a '46.76 7.62 '")
 
+    global interface
     args = parser.parse_args()
     print("Arguments: {}".format(args))
 
@@ -339,11 +335,10 @@ def main():
 
     else:
         interface = args.interface
-        if args.multi:
-            multi = True
+
         if args.random : # Consider fail when you pass 0 drones... ToDo
             n_random = args.random
-            
+
             print("Spoofing {} drones".format(n_random))
             if args.area:
                 point = args.area.split()

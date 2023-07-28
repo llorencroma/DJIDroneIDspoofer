@@ -70,7 +70,6 @@ class Drone:
         #else:
         print("Longitud -->  %s \nLatitude --> %s " % (self.longitude,self.latitude))
 
-  
     '''
     Returns the payload containing the DroneID  telemetry info in bytes
     '''
@@ -99,7 +98,7 @@ class Drone:
         self.attribute2byte(self.uuid_len),
         self.attribute2byte(self.uuid)       
         ])
-        
+
         # some padding to have the same length as de original DJI payload
         drone2bytes = b''.join([drone2bytes,b'\x00'*(91 - len(drone2bytes))]) 
 
@@ -121,13 +120,11 @@ class Drone:
         self.v_north =  floor(self.v_north +  (-axis_direction) * 100)
         self.v_east =  floor(self.v_east - 50) if self.v_east > 0 else floor(self.v_east + 50)
 
-   
     def update_pilot_longitude(self, axis_direction):
         self.pilot_lon = self.pilot_lon +  float("{:.4f}".format(float(axis_direction/ 1000))) 
         
     def update_pilot_latitude(self, axis_direction):
         self.pilot_lat = self.pilot_lat + float("{:.4f}".format(float(axis_direction / 1000))) * (-1) # -1 to correct the inverted sign on the XBOX controller Y axis 
-       
 
     '''
     Update yaw 
@@ -137,7 +134,6 @@ class Drone:
     def update_yaw(self, axis_direction):
         print("DIRECTION {}".format(axis_direction))
         self.yaw = (self.yaw + (axis_direction/3)) % 360  # positive rotates right, negative left. Reduce the effect of so many events
-       
 
     '''
     Returns the payload containing the DroneID flight info
@@ -152,7 +148,7 @@ class Drone:
         self.attribute2byte(str(len(flight_info))),
         self.attribute2byte(flight_info)])
         finfo_bytes = b''.join([finfo_bytes,b'\x00'*(147 - len(finfo_bytes))])  # some padding ...
-        
+
         return finfo_bytes
 
 
@@ -187,7 +183,7 @@ class Drone:
         else:
             #print("Attribute {}: {}".format(attribute,att_type))
             return attribute
-    
+
     '''
     Returns a random location. Longitude or Latitude
     If a POINT is given, the random location is around the point
