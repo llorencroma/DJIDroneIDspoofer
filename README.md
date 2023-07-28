@@ -1,8 +1,9 @@
 # DJI DroneID Spoofer
-It can advertise thousands of fake drones recognised by the DJI Aeroscope device. Mainly based on the report from Department13 "Anatomy of dji drone id implementation re aeroscope". 
+It can advertise multiple fake Remote ID recognised by the DJI Aeroscope device as flying drones. Mainly based on the report from Department13 "Anatomy of dji drone id implementation re aeroscope". 
 
 DJI drones broadcast flight information. In the case of models controlled through 802.11 standard, this informations is added as a payload to 802.11 Beacon type 
 packets, in the Vendor ID tag. Therefore, using Scapy in that case, 802.11 Beacon packets can be created, and the payload can be modified at will.
+
 
 The user can spoof: (a) 1 controlled DroneID (b) X drones with random values  (c) X drones with random values around a location point. When spoofing a single DroneID, the parameters location, speed, altitude, pilot location and others can be controlled using an XBOX controller/keyboard.
 
@@ -25,8 +26,6 @@ The user can spoof: (a) 1 controlled DroneID (b) X drones with random values  (c
 ├── replay_mavic.py: Basic replay attack example. We replay a real Beacon captured (with Wireshark) from a DJI Mavic drone. 
 ├── requiremets.txt: Python modules to be installed.
 ```
-
-
 
 ## What do you need?
 A WiFi adapter able to send packets is required.
@@ -86,3 +85,7 @@ The script can be customized with the following parameters.
 1. Sometimes the interface will stop transmiting with `Network is down` error. Run `./interface-monitor.sh` again.
 2. Send packets with Scapy requires privileges, that is why `sudo` command is required.
 
+## Contributors
+DroneIDspoofer:  Llorenç Romá
+
+WifiSniffer:     Beatrice Dallomo, @beatricedall
