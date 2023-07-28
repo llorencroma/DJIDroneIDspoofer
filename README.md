@@ -26,8 +26,6 @@ The user can spoof: (a) 1 controlled DroneID (b) X drones with random values  (c
 ├── requiremets.txt: Python modules to be installed.
 ```
 
-
-
 ## What do you need?
 A WiFi adapter able to send packets is required.
 A game controller (e.g., XBOX) or keyboard if you want to control more parameters of the DroneID.
