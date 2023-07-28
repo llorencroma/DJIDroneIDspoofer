@@ -65,10 +65,10 @@ class Drone:
         self.uuid_len = len(self.uuid)
 
 
-        if(verbose): ## TODO Include Verbose option to print all Fields Values
-            [print(attribute, getattr(self, attribute)) for attribute in dir(self) if not attribute.startswith("__") and not callable(self)]
-        else:
-            print("Longitud -->  %s \nLatitude --> %s " % (self.longitude,self.latitude))
+        #if(verbose): ## TODO Include Verbose option to print all Fields Values
+        #    [print(attribute, getattr(self, attribute)) for attribute in dir(self) if not attribute.startswith("__") and not callable(self)]
+        #else:
+        print("Longitud -->  %s \nLatitude --> %s " % (self.longitude,self.latitude))
 
   
     '''
