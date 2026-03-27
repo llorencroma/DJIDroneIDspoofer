@@ -1,1 +1,0 @@
-- [project_sniffer_removal.md](project_sniffer_removal.md) - User plans to remove wifi_sniffer/ from the project
