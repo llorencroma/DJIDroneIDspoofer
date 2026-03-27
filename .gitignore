@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Runtime
+*.log
+db.json
+sniff_log.txt
+
+# OS
+.DS_Store
+Thumbs.db
+
+# DOCS
+
+STATUS.md
+TASKS.md
